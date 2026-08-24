@@ -18,7 +18,7 @@ class Product(models.Model):
     author = models.CharField(max_length=100)
     date_added = models.DateTimeField(auto_now_add=True)
     intro = models.TextField()
-    file = models.FileField()
+    file = models.FileField(upload_to="products/%Y/%m/")
 
     def __str__(self) -> str:
         return self.name
