@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     # 自定义应用程序
     'website_index',
     'comments',
+    'products',
 
     # 默认的应用程序
     'django.contrib.admin',
