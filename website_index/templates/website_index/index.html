@@ -6,7 +6,18 @@
 
 <p>成立于2013年，热爱编程、乐于分享、共同成长</p>
 
-{{ intro.title }}
-{{ intro.content }}
-
+<p>
+  {{ intro.title }}
+  {{ intro.content|linebreaks }}
+</p>
+<ul>
+  {% for moment in moments %}
+    <li>
+      {{ moment.title }}
+      {{ moment.picture }}
+    </li>
+  {% empty %}
+    <p>暂无照片</p>
+  {% endfor %}
+  </ul>
 {% endblock content %}

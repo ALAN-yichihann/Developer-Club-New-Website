@@ -9,4 +9,5 @@ urlpatterns = [
     # 主页
     path('', views.index, name='index'),
     path('intros/', views.intro_list, name='intro_list'),
+    path('history/', views.history, name='history')
 ]

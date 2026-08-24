@@ -1,7 +1,9 @@
 <p>
     <a href="{% url 'website_index:index' %}">首页</a>
     <a href="{% url 'website_index:intro_list' %}">关于我们</a>
+    <a href="{% url 'website_index:history' %}">大事记</a>
     <a href="{% url 'comments:comment_list' %}">社员心声</a>
+    <a href="{% url 'products:all_products' %}">社团作品</a>
 </p>
 {% block content %}
 {% endblock content %}
