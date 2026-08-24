@@ -1,5 +1,9 @@
 from django.shortcuts import render
 
+from .models import Intro
+
 def index(request):
     """网站主页"""
-    return render(request, 'website_index/index.html')
+    intro = Intro.objects.first()
+    context = {'intro': intro}
+    return render(request, 'website_index/index.html', context)
