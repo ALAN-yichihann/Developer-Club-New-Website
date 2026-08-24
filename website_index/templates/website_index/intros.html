@@ -1,0 +1,18 @@
+{% extends 'website_index/base.html' %}
+
+{% block content %}
+
+<ul>
+    {% for intro in intros %}
+    <li>
+        <p>
+            {{ intro.title }}<br>
+            {{ intro.content }}
+        </p>
+    </li>
+    {% empty %}
+        <p>暂无简介</p>
+    {% endfor %}
+</ul>
+
+{% endblock content %}

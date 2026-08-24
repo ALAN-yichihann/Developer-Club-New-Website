@@ -4,4 +4,16 @@
 <p>社员有话说</p>
 
 <p>欢迎来到社员有话说页面！在这里，您可以分享您的想法、意见和建议。请随意发表评论，我们期待听到您的声音！</p>
+
+<ul>
+    {% for comment in comments %}
+        <li>
+            {{ comment.content }}<br>
+            {{ comment.creator }}
+        </li>
+    {% empty %}
+        <p>暂无评论</p>
+    {% endfor %}
+</ul>
+
 {% endblock content %}
