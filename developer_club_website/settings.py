@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     # 自定义应用程序
+    'website_index',
     'comments',
 
     # 默认的应用程序
