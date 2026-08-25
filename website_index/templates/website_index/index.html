@@ -10,11 +10,12 @@
   {{ intro.title }}
   {{ intro.content|linebreaks }}
 </p>
+<a>社团风采</a>
 <ul>
   {% for moment in moments %}
     <li>
-      {{ moment.title }}
-      {{ moment.picture }}
+      {{ moment.title }}<br>
+      <img src="{{ moment.picture.url }}" alt="上传的图片", height="400pt">
     </li>
   {% empty %}
     <p>暂无照片</p>
