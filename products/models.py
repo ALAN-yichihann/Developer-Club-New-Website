@@ -1,7 +1,7 @@
 from django.db import models
 
 class Series(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     intro = models.TextField()
     author = author = models.CharField(max_length=100)
     date_added = models.DateField(auto_now_add=True)

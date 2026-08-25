@@ -21,3 +21,21 @@ class Moment(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+class Activity(models.Model):
+    title = models.CharField(max_length=50)
+    content = models.TextField()
+
+    class Meta:
+        verbose_name_plural = 'Activities'
+
+    def __str__(self):
+        return self.title
+
+class Info(models.Model):
+    title = models.CharField(max_length=50)
+    content = models.TextField()
+    communication = models.TextField()
+
+    def __str__(self):
+        return self.title 

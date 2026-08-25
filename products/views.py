@@ -12,8 +12,8 @@ def all_products(request):
     return render(request, 'products/products.html', context)
 
 
-def single_series(request, series_id):
-    series = Series.objects.get(id=series_id)
+def single_series(request, product_name):
+    series = Series.objects.get(name=product_name)
     products = series.product_set.order_by('-date_added')
     context = {'series': series, 'products': products}
     return render(request, 'products/product.html', context)

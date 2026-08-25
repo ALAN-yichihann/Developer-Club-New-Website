@@ -1,0 +1,11 @@
+{% extends 'website_index/base.html' %}
+
+{% block content %}
+
+<ul>
+    <p>{{ info.title }}</p>
+    <p>{{ info.content|linebreaks }}</p>
+    <p>{{ info.communication|linebreaks }}</p>
+</ul>
+
+{% endblock content %}

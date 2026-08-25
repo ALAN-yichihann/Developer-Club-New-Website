@@ -10,6 +10,22 @@
   {{ intro.title }}
   {{ intro.content|linebreaks }}
 </p>
+<p>
+  <a>社团作品</a>
+  <ul>
+    {% for work in works %}
+    <li>
+      {{ work.name }}<br>
+      <a href="{% url 'products:download_file' work.id %}">下载</a><br>
+      {{ work.author }}<br>
+      {{ work.date_added }}<br>
+    </li>
+    {% empty %}
+      <p>暂无作品</p>
+    {% endfor %}
+  </ul>
+  <a href="{% url 'products:all_products' %}">更多作品</a>
+</p>
 <a>社团风采</a>
 <ul>
   {% for moment in moments %}
@@ -21,4 +37,16 @@
     <p>暂无照片</p>
   {% endfor %}
   </ul>
+<ul>
+  <a>快速导航</a>
+  <li>
+    <a href="{% url 'website_index:history' %}">大事记</a>
+  </li>
+  <li>
+    <a href="{% url 'comments:comment_list' %}">社员心声</a>
+  </li>
+  <li>
+    <a href="{% url 'website_index:join_us' %}">加入我们</a>
+  </li>
+</ul>
 {% endblock content %}
