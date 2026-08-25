@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 
 from .models import Product, Series
-from .forms import EditSeriesForm, ProductForm, SeriesForm
+from .forms import EditProductForm, EditSeriesForm, ProductForm, SeriesForm
 
 def all_products(request):
     """评论页面"""
@@ -97,3 +97,31 @@ def edit_single_series(request, bango):
                             bango=bango)
     context = {'series': series, 'form': form}
     return render(request, 'products/edit_series.html', context)
+
+
+def edit_product(request, bango, product_id):
+    """编辑单个作品"""
+    series = get_object_or_404(Series, bango=bango)
+    product = get_object_or_404(Product, id=product_id, series=series)
+
+    if request.method == 'POST':
+        form = EditProductForm(
+            request.POST,
+            request.FILES,
+            instance=product,
+        )
+        if form.is_valid():
+            form.save()
+            return redirect(
+                'products:my_single_series',
+                bango=series.bango,
+            )
+    else:
+        form = EditProductForm(instance=product)
+
+    context = {
+        'series': series,
+        'product': product,
+        'form': form,
+    }
+    return render(request, 'products/edit_product.html', context)

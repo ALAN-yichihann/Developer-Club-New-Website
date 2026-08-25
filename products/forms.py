@@ -30,3 +30,16 @@ class ProductForm(forms.ModelForm):
             'name': '版本名称', 'author': '作者', 'intro': '介绍', 'file': '作品文件'
         }
         widgets = {'intro': forms.Textarea(attrs={'cols': 80})}
+
+
+class EditProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ['name', 'author', 'intro', 'file']
+        labels = {
+            'name': '版本名称',
+            'author': '作者',
+            'intro': '介绍',
+            'file': '作品文件',
+        }
+        widgets = {'intro': forms.Textarea(attrs={'cols': 80})}

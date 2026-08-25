@@ -13,5 +13,10 @@ urlpatterns = [
     path('<str:bango>/', views.single_series, name='single_series'),
     path('my_works/<str:bango>/', views.my_single_series, name='my_single_series'),
     path('my_works/<str:bango>/edit', views.edit_single_series, name='edit_single_series'),
-    path('my_works/<str:bango>/new_work/', views.new_product, name='new_product')
+    path('my_works/<str:bango>/new_work/', views.new_product, name='new_product'),
+    path(
+        'my_works/<str:bango>/<int:product_id>/edit/',
+        views.edit_product,
+        name='edit_product',
+    ),
     ]

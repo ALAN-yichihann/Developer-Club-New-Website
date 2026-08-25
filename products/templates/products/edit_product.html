@@ -1,0 +1,15 @@
+{% extends 'website_index/base.html' %}
+
+{% block content %}
+  <p>编辑作品</p>
+
+  <form
+    action="{% url 'products:edit_product' series.bango product.id %}"
+    method="POST"
+    enctype="multipart/form-data"
+  >
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button name="submit">修改</button>
+  </form>
+{% endblock content %}

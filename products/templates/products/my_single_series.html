@@ -18,6 +18,7 @@
     {% for product in products %}
       <li>
         {{ product.name }}<br>
+        <a href="{% url 'products:edit_product' series.bango product.id %}">编辑</a><br>
         <a href="{% url 'products:download_file' product.id %}">下载</a><br>
         {{ product.author}}<br>
         {{ product.date_added}}<br>
