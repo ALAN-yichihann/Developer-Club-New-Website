@@ -1,13 +1,22 @@
-<p>
-    <a href="{% url 'website_index:index' %}">首页</a>
-    <a href="{% url 'website_index:intro_list' %}">关于我们</a>
-    <a href="{% url 'website_index:history' %}">大事记</a>
-    <a href="{% url 'comments:comment_list' %}">社员心声</a>
-    <a href="{% url 'products:all_products' %}">社团作品</a>
-    <a href="{% url 'website_index:activities' %}">活动规划</a>
-    <a href="{% url 'website_index:join_us' %}">加入我们</a>
-    <a href="{% url 'products:my_works' %}">我的作品</a>
-</p>
+<nav>
+  <a href="{% url 'website_index:index' %}">首页</a>
+  <a href="{% url 'website_index:intro_list' %}">关于我们</a>
+  <a href="{% url 'website_index:history' %}">大事记</a>
+  <a href="{% url 'comments:comment_list' %}">社员心声</a>
+  <a href="{% url 'products:all_products' %}">社团作品</a>
+  <a href="{% url 'website_index:activities' %}">活动规划</a>
+  <a href="{% url 'website_index:join_us' %}">加入我们</a>
+  <a href="{% url 'products:my_works' %}">我的作品</a> --
+  {% if user.is_authenticated %}
+    你好，社员{{ user.username }}
+    <form action="{% url 'users:logout' %}" method="post" style="display: inline;">
+      {% csrf_token %}
+      <button type="submit">退出登录</button>
+    </form>
+  {% else %}
+    <a href="{% url 'users:login' %}">登录</a>
+  {% endif %}
+</nav>
 {% block content %}
 {% endblock content %}
 <p>南京师范大学附属中学开发者社团</p>

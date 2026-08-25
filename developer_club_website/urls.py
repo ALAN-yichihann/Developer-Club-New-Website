@@ -23,7 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('website_index.urls')),  # Include the URLs from the website_index app
     path('comments/', include('comments.urls')),  # Include the URLs from the comments app
-    path('products/', include('products.urls'))
+    path('products/', include('products.urls')),
+    path('users/', include('users.urls'))
 ]
 
 if settings.DEBUG:

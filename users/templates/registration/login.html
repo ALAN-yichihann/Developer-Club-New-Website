@@ -1,0 +1,18 @@
+{% extends "website_index/base.html" %}
+
+{% block content %}
+
+  {% if form.errors %}
+    <p>你的用户名与密码不匹配，请重试。</p>
+  {% endif %}
+
+  <form method="POST" action="{% url 'users:login' %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button name="submit">登录</button>
+    <input type="hidden" name="next"
+      value="{% url 'website_index:index' %}" />
+  </form>
+
+{% endblock content %}
