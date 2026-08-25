@@ -1,0 +1,11 @@
+{% extends 'website_index/base.html' %}
+
+{% block content %}
+  <p>编辑你的作品集！</p>
+
+  <form action="{% url 'products:edit_single_series' series.bango %}" method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button name="submit">修改</button>
+  </form>
+{% endblock content %}

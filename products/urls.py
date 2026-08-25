@@ -12,5 +12,6 @@ urlpatterns = [
     path('download/<int:product_id>/', views.download_file, name='download_file'),
     path('<str:bango>/', views.single_series, name='single_series'),
     path('my_works/<str:bango>/', views.my_single_series, name='my_single_series'),
+    path('my_works/<str:bango>/edit', views.edit_single_series, name='edit_single_series'),
     path('my_works/<str:bango>/new_work/', views.new_product, name='new_product')
     ]
