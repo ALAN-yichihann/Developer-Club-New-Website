@@ -1,0 +1,11 @@
+{% extends 'website_index/base.html' %}
+
+{% block content %}
+  <p>增加你的作品集！</p>
+
+  <form action="{% url 'products:new_series' %}" method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button name="submit">添加</button>
+  </form>
+{% endblock content %}

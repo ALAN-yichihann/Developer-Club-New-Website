@@ -1,7 +1,24 @@
+from django.core.validators import RegexValidator
 from django.db import models
 
+english_and_symbols_validator = RegexValidator(
+    regex=r'^[a-zA-Z_]+$',
+    message='只能输入英文字母和下划线！',
+)
+
 class Series(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(
+        max_length=100, 
+        unique=True, 
+        error_messages={
+          'unique': '该名称已经存在，请重新输入！',  # 自定义重复提示语
+      })
+    bango = models.CharField(max_length=20, 
+                             validators=[english_and_symbols_validator], 
+                             unique=True, 
+                             error_messages={
+          'unique': '该代号已经存在，请重新输入！',  # 自定义重复提示语
+      })
     intro = models.TextField()
     author = author = models.CharField(max_length=100)
     date_added = models.DateField(auto_now_add=True)

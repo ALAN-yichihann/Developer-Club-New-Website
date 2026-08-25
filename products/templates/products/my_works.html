@@ -1,11 +1,11 @@
 {% extends 'website_index/base.html' %}
 
 {% block content %}
-<p>社团作品</p>
+<p>我的作品</p>
 
-<p>这里展示社团成员或集体的作品！</p>
+<p>这里展示你的作品！</p>
 
-<a>上传自己的作品！</a>
+<a href="{% url 'products:new_series' %}">上传自己的作品！</a>
 
 <ul>
     {% for single_series in series %}
