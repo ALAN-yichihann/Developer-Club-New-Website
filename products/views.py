@@ -15,7 +15,7 @@ def all_products(request):
 
 def single_series(request, bango):
     """显示单个作品集的页面"""
-    series = Series.objects.get(bango=bango)
+    series = get_object_or_404(Series, bango=bango)
     products = series.product_set.order_by('-date_added')
     context = {'series': series, 'products': products}
     return render(request, 'products/product.html', context)
@@ -77,7 +77,7 @@ def new_product(request, bango):
 
 def my_single_series(request, bango):
     """显示单个作品集的页面"""
-    series = Series.objects.get(bango=bango)
+    series = get_object_or_404(Series, bango=bango)
     products = series.product_set.order_by('-date_added')
     context = {'series': series, 'products': products}
     return render(request, 'products/my_single_series.html', context)

@@ -83,6 +83,8 @@ class EditProductTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '旧版本')
         self.assertContains(response, 'enctype="multipart/form-data"')
+        self.assertNotContains(response, 'Current:')
+        self.assertContains(response, '更改为:')
 
     def test_edit_updates_product_without_changing_series(self):
         response = self.client.post(

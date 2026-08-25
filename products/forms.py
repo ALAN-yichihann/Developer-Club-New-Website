@@ -2,6 +2,12 @@ from django import forms
 
 from .models import Series, Product
 
+
+class EditProductFileInput(forms.ClearableFileInput):
+    template_name = 'products/widgets/edit_product_file_input.html'
+    input_text = '更改为'
+
+
 class SeriesForm(forms.ModelForm):
     class Meta:
         model = Series
@@ -42,4 +48,7 @@ class EditProductForm(forms.ModelForm):
             'intro': '介绍',
             'file': '作品文件',
         }
-        widgets = {'intro': forms.Textarea(attrs={'cols': 80})}
+        widgets = {
+            'intro': forms.Textarea(attrs={'cols': 80}),
+            'file': EditProductFileInput(),
+        }
