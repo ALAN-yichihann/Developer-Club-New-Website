@@ -10,7 +10,7 @@
 <ul>
     {% for single_series in series %}
         <li>
-            <a href="{% url 'products:single_series' single_series.bango %}">{{ single_series.name }}</a><br>
+            <a href="{% url 'products:my_single_series' single_series.bango %}">{{ single_series.name }}</a><br>
             {{ single_series.intro|linebreaks }}<br>
             {{ single_series.author}}<br>
             {{ single_series.date_added}}<br>

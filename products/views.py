@@ -2,9 +2,10 @@ from pathlib import Path
 
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse
 
 from .models import Product, Series
-from .forms import SeriesForm
+from .forms import SeriesForm, ProductForm
 
 def all_products(request):
     """评论页面"""
@@ -12,14 +13,12 @@ def all_products(request):
     context = {'series': series}
     return render(request, 'products/products.html', context)
 
-
 def single_series(request, bango):
     """显示单个作品集的页面"""
     series = Series.objects.get(bango=bango)
     products = series.product_set.order_by('-date_added')
     context = {'series': series, 'products': products}
     return render(request, 'products/product.html', context)
-
 
 def download_file(request, product_id):
     """下载文件"""
@@ -55,3 +54,30 @@ def new_series(request):
 
     context = {'form': form}
     return render(request, 'products/new_series.html', context)
+
+def new_product(request, bango):
+    """添加新作品"""
+    series = get_object_or_404(Series, bango=bango)
+
+    if request.method != 'POST':
+        form = ProductForm()
+    else:
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.series = series
+            product.save()
+            return redirect(
+                'products:my_single_series',
+                bango=bango,
+                    )
+
+    context = {'form': form, 'series': series}
+    return render(request, 'products/new_product.html', context)
+
+def my_single_series(request, bango):
+    """显示单个作品集的页面"""
+    series = Series.objects.get(bango=bango)
+    products = series.product_set.order_by('-date_added')
+    context = {'series': series, 'products': products}
+    return render(request, 'products/my_single_series.html', context)

@@ -1,0 +1,29 @@
+{% extends 'website_index/base.html' %}
+
+{% block content %}
+
+<a href="{% url 'products:my_works' %}">返回</a>
+
+<a href="{% url 'products:new_product' series.bango %}">上传作品！</a>
+
+<ul>
+  <p>
+    {{ series.name }}<br>
+    {{ series.intro|linebreaks }}<br>
+    {{ series.author }}<br>
+    {{ series.date_added}}<br>
+  </p>
+    {% for product in products %}
+      <li>
+        {{ product.name }}<br>
+        <a href="{% url 'products:download_file' product.id %}">下载</a><br>
+        {{ product.author}}<br>
+        {{ product.date_added}}<br>
+        {{ product.intro|linebreaks }}<br>
+      </li>
+    {% empty %}
+      <p>此系列暂无作品</p>
+    {% endfor %}
+</ul>
+
+{% endblock content %}
