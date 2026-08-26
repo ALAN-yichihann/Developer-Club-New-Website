@@ -8,6 +8,11 @@
 
 <a href="{% url 'products:new_product' series.bango %}">上传作品！</a>
 
+<p>当前有 {{ pending_product_count }} 个作品尚未审核。</p>
+
+{% if pending_product_count > 0 %}
+  <p>PS: 如果你觉得审核太慢，可以去线下压力管理员(doge)</p>
+{% endif %}
 <ul>
   <p>
     {{ series.name }}<br>

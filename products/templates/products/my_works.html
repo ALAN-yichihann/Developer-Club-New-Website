@@ -7,17 +7,22 @@
 
 <a href="{% url 'products:new_series' %}">上传自己的作品！</a>
 
+<p>当前有 {{ pending_series_count }} 个作品集尚未审核。</p>
+{% if pending_series_count > 0 %}
+  <p>PS: 如果你觉得审核太慢，可以去线下压力管理员(doge)</p>
+{% endif %}
+
 <ul>
-    {% for single_series in series %}
-        <li>
-            <a href="{% url 'products:my_single_series' single_series.bango %}">{{ single_series.name }}</a><br>
-            {{ single_series.intro|linebreaks }}<br>
-            {{ single_series.author}}<br>
-            {{ single_series.date_added}}<br>
-        </li>
-    {% empty %}
-        <p>暂无作品</p>
-    {% endfor %}
+  {% for single_series in series %}
+    <li>
+      <a href="{% url 'products:my_single_series' single_series.bango %}">{{ single_series.name }}</a><br>
+      {{ single_series.intro|linebreaks }}<br>
+      {{ single_series.author}}<br>
+      {{ single_series.date_added}}<br>
+    </li>
+  {% empty %}
+    <p>暂无通过审核的作品集</p>
+  {% endfor %}
 </ul>
 
 {% endblock content %}

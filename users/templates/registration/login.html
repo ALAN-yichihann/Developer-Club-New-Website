@@ -1,6 +1,7 @@
 {% extends "website_index/base.html" %}
 
 {% block content %}
+  <p>只有经过管理员审核的账户才能登录。</p>
   <form method="POST" action="{% url 'users:login' %}">
     {% csrf_token %}
     {{ form.as_p }}

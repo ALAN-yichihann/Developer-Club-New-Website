@@ -1,29 +1,41 @@
 from pathlib import Path
 
-from django.http import FileResponse, Http404
-from django.shortcuts import get_object_or_404, render, redirect
-from django.urls import reverse
 from django.contrib.auth.decorators import login_required
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Product, Series
 from .forms import EditProductForm, EditSeriesForm, ProductForm, SeriesForm
+from .models import Product, Series
+
 
 def all_products(request):
     """所有作品页面"""
-    series = Series.objects.order_by('date_added')
+    series = (
+        Series.objects.filter(is_approved=True)
+        .exclude(bango__isnull=True)
+        .exclude(bango='')
+        .order_by('date_added')
+    )
     context = {'series': series}
     return render(request, 'products/products.html', context)
 
+
 def single_series(request, bango):
     """显示单个作品集的页面"""
-    series = get_object_or_404(Series, bango=bango)
-    products = series.product_set.order_by('-date_added')
+    series = get_object_or_404(Series, bango=bango, is_approved=True)
+    products = series.product_set.filter(is_approved=True).order_by('-date_added')
     context = {'series': series, 'products': products}
     return render(request, 'products/product.html', context)
 
+
 def download_file(request, product_id):
     """下载文件"""
-    product = get_object_or_404(Product, id=product_id)
+    product = get_object_or_404(
+        Product,
+        id=product_id,
+        is_approved=True,
+        series__is_approved=True,
+    )
     if not product.file:
         raise Http404("文件不存在")
 
@@ -35,12 +47,30 @@ def download_file(request, product_id):
     filename = Path(product.file.name).name
     return FileResponse(product_file, as_attachment=True, filename=filename)
 
+
 @login_required
 def my_works(request):
     """用户个人的作品"""
-    series = Series.objects.filter(owner=request.user).order_by('date_added')
-    context = {'series': series}
+    series = (
+        Series.objects.filter(owner=request.user, is_approved=True)
+        .exclude(bango__isnull=True)
+        .exclude(bango='')
+        .order_by('date_added')
+    )
+    pending_series_count = Series.objects.filter(
+        owner=request.user,
+        is_approved=False,
+    ).count()
+    context = {
+        'series': series,
+        'pending_series_count': pending_series_count,
+    }
     return render(request, 'products/my_works.html', context)
+
+@login_required
+def series_added(request):
+    """已添加，未审核"""
+    return render(request, 'products/series_added.html', {})
 
 @login_required
 def new_series(request):
@@ -55,15 +85,16 @@ def new_series(request):
             new_series = form.save(commit=False)
             new_series.owner = request.user
             new_series.save()
-            return redirect('products:all_products')
+            return redirect('products:series_added')
 
     context = {'form': form}
     return render(request, 'products/new_series.html', context)
 
+
 @login_required
 def new_product(request, bango):
     """添加新作品"""
-    series = get_object_or_404(Series, bango=bango)
+    series = get_object_or_404(Series, bango=bango, is_approved=True)
 
     if series.owner != request.user:
         raise Http404
@@ -79,25 +110,34 @@ def new_product(request, bango):
             return redirect(
                 'products:my_single_series',
                 bango=bango,
-                    )
+            )
 
     context = {'form': form, 'series': series}
     return render(request, 'products/new_product.html', context)
 
+
 @login_required
 def my_single_series(request, bango):
     """显示个人单个作品集的页面"""
-    series = get_object_or_404(Series, bango=bango)
+    series = get_object_or_404(Series, bango=bango, is_approved=True)
     if series.owner != request.user:
         raise Http404
-    products = series.product_set.order_by('-date_added')
-    context = {'series': series, 'products': products}
+    products = series.product_set.filter(is_approved=True).order_by('-date_added')
+    pending_product_count = series.product_set.filter(
+        is_approved=False
+    ).count()
+    context = {
+        'series': series,
+        'products': products,
+        'pending_product_count': pending_product_count,
+    }
     return render(request, 'products/my_single_series.html', context)
+
 
 @login_required
 def edit_single_series(request, bango):
     """编辑单个作品集的页面"""
-    series = get_object_or_404(Series, bango=bango)
+    series = get_object_or_404(Series, bango=bango, is_approved=True)
     if series.owner != request.user:
         raise Http404
     if request.method != 'POST':
@@ -113,11 +153,17 @@ def edit_single_series(request, bango):
     context = {'series': series, 'form': form}
     return render(request, 'products/edit_series.html', context)
 
+
 @login_required
 def edit_product(request, bango, product_id):
     """编辑单个作品"""
-    series = get_object_or_404(Series, bango=bango)
-    product = get_object_or_404(Product, id=product_id, series=series)
+    series = get_object_or_404(Series, bango=bango, is_approved=True)
+    product = get_object_or_404(
+        Product,
+        id=product_id,
+        series=series,
+        is_approved=True,
+    )
     if series.owner != request.user:
         raise Http404
     if request.method == 'POST':

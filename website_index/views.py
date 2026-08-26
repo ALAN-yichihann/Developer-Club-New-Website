@@ -9,7 +9,10 @@ def index(request):
     """网站主页"""
     intro = Intro.objects.first()  # 获取第一条Intro对象
     moments = Moment.objects.order_by('?')[:3]
-    works = Product.objects.order_by('-date_added')[:3]
+    works = Product.objects.filter(
+        is_approved=True,
+        series__is_approved=True,
+    ).order_by('-date_added')[:3]
     context = {'intro': intro, 'moments': moments, 'works': works}
     return render(request, 'website_index/index.html', context)
 
