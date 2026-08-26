@@ -1,10 +1,14 @@
 from tempfile import TemporaryDirectory
 
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import Product, Series
+
+
+User = get_user_model()
 
 
 class ProductDownloadTests(TestCase):
@@ -54,14 +58,20 @@ class EditProductTests(TestCase):
         )
         self.settings_override.enable()
 
+        self.user = User.objects.create_user(
+            username='approved_user',
+            password='StrongPassword123!',
+        )
         self.series = Series.objects.create(
             name='测试系列',
             bango='test_series',
+            owner=self.user,
             intro='系列简介',
             author='测试作者',
         )
         self.product = Product.objects.create(
             series=self.series,
+            owner=self.user,
             name='旧版本',
             author='旧作者',
             intro='旧介绍',
@@ -72,6 +82,7 @@ class EditProductTests(TestCase):
             args=[self.series.bango, self.product.id],
         )
         self.original_file_name = self.product.file.name
+        self.client.force_login(self.user)
 
     def tearDown(self):
         self.settings_override.disable()
@@ -109,6 +120,7 @@ class EditProductTests(TestCase):
         other_series = Series.objects.create(
             name='其他系列',
             bango='other_series',
+            owner=self.user,
             intro='其他简介',
             author='其他作者',
         )

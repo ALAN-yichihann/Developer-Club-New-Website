@@ -6,15 +6,20 @@
   <a href="{% url 'products:all_products' %}">社团作品</a>
   <a href="{% url 'website_index:activities' %}">活动规划</a>
   <a href="{% url 'website_index:join_us' %}">加入我们</a>
-  <a href="{% url 'products:my_works' %}">我的作品</a> --
   {% if user.is_authenticated %}
-    你好，社员{{ user.username }}
+    <a href="{% url 'products:my_works' %}">我的作品</a> --
+  {% else %}
+    --
+  {% endif %}
+  {% if user.is_authenticated %}
+    你好，社员{{ user.realname }}
     <form action="{% url 'users:logout' %}" method="post" style="display: inline;">
       {% csrf_token %}
       <button type="submit">退出登录</button>
     </form>
   {% else %}
-    <a href="{% url 'users:login' %}">登录</a>
+    <a href="{% url 'users:register' %}">社员注册</a>
+    <a href="{% url 'users:login' %}">社员登录</a>
   {% endif %}
 </nav>
 {% block content %}

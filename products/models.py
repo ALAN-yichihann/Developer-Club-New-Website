@@ -1,5 +1,6 @@
 from django.core.validators import RegexValidator
 from django.db import models
+from django.contrib.auth.models import User
 
 english_and_symbols_validator = RegexValidator(
     regex=r'^[a-zA-Z_]+$',
@@ -19,6 +20,10 @@ class Series(models.Model):
                              error_messages={
           'unique': '该代号已经存在，请重新输入！',  # 自定义重复提示语
       })
+    owner = models.ForeignKey(User,
+                              on_delete=models.SET_NULL,
+                              null=True,
+                              blank=True,)
     intro = models.TextField()
     author = author = models.CharField(max_length=100)
     date_added = models.DateField(auto_now_add=True)
@@ -31,6 +36,9 @@ class Series(models.Model):
 
 class Product(models.Model):
     series = models.ForeignKey(Series, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL,
+                              null=True,
+                              blank=True)
     name = models.CharField(max_length=100)
     author = models.CharField(max_length=100)
     date_added = models.DateTimeField(auto_now_add=True)
@@ -39,5 +47,3 @@ class Product(models.Model):
 
     def __str__(self) -> str:
         return self.name
-
-    
