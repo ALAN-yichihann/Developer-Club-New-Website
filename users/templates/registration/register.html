@@ -1,24 +1,45 @@
 {% extends "website_index/base.html" %}
 
+{% block page_title %}社员注册 - 南师附中开发者社团{% endblock page_title %}
+
 {% block content %}
-  <p>注册注意事项：</p>
-  <ul>
-    <li>1、原则上只允许南师附中开发者社社员注册;</li>
-    <li>2、用户注册账户后需要经过管理员审核才能转为可登录账户，因此请填写真实有效的信息;</li>
-    <li>3、只有经过审核的用户能够在此网站上传自己的作品。</li>
-    <li>PS: 如果你觉得审核太慢，可以去线下压力管理员(doge)</li>
-  </ul>
-  <p>如果你不是开发者社社员，但也想上传自己的作品，你可以：</p>
-  <ul>
-    <li>1、向网站管理员申请注册账号;</li>
-    <li>2、或者找你认识的开发者社社员代为上传(作品作者可以自定义，不与账户关联)。</li>
-  </ul>
-  <form method="post" action="{% url 'users:register' %}">
-    {% csrf_token %}
-    {{ form.as_p }}
+  <div class="page-shell">
+    <div class="form-layout">
+      <div>
+        <header class="page-header">
+          <h1>社员注册</h1>
+          <p>提交真实有效的信息，管理员确认后即可登录并上传作品。</p>
+        </header>
 
-    <button name="submit">注册</button>
-    <input type="hidden" name="next" value="{% url 'website_index:index' %}" />
-  </form>
+        <div class="notice">
+          <ol class="info-list">
+            <li>原则上只允许南师附中开发者社团成员注册。</li>
+            <li>注册后需要管理员确认，请填写真实姓名、学籍号和有效邮箱。</li>
+            <li>只有确认后的用户才能上传和管理自己的作品。</li>
+          </ol>
+        </div>
 
+        <section class="register-alternative">
+          <header class="page-header">
+            <p>如果你不是开发者社社员，但也想上传自己的作品，你可以：</p>
+          </header>
+
+          <div class="notice">
+            <ol class="info-list">
+              <li>加入开发者社。</li>
+              <li>或线下向管理员申请注册账户。</li>
+              <li>或请你认识的开发者社社员代为上传，作品集作者不会与账户拥有者绑定。</li>
+            </ol>
+          </div>
+        </section>
+      </div>
+
+      <form class="form-shell" method="post" action="{% url 'users:register' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button form-submit" type="submit">提交注册</button>
+        <input type="hidden" name="next" value="{% url 'website_index:index' %}">
+      </form>
+    </div>
+  </div>
 {% endblock content %}

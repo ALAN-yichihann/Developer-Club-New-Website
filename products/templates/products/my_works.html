@@ -1,28 +1,44 @@
 {% extends 'website_index/base.html' %}
 
+{% block page_title %}我的作品 - 南师附中开发者社团{% endblock page_title %}
+
 {% block content %}
-<p>我的作品</p>
+  <div class="page-shell">
+    <header class="page-header">
+      <h1>我的作品</h1>
+      <p>管理已通过审核的作品集，并提交新的作品集。</p>
+    </header>
 
-<p>这里展示你的作品！</p>
+    <div class="page-actions">
+      <a class="button" href="{% url 'products:new_series' %}">新建作品集</a>
+    </div>
 
-<a href="{% url 'products:new_series' %}">上传自己的作品！</a>
+    <div class="status-panel">
+      <p>当前有 {{ pending_series_count }} 个作品集尚未审核。</p>
+      {% if pending_series_count > 0 %}
+        <p>审核完成后，作品集会显示在这里。</p>
+      {% endif %}
+    </div>
 
-<p>当前有 {{ pending_series_count }} 个作品集尚未审核。</p>
-{% if pending_series_count > 0 %}
-  <p>PS: 如果你觉得审核太慢，可以去线下压力管理员(doge)</p>
-{% endif %}
-
-<ul>
-  {% for single_series in series %}
-    <li>
-      <a href="{% url 'products:my_single_series' single_series.bango %}">{{ single_series.name }}</a><br>
-      {{ single_series.intro|linebreaks }}<br>
-      {{ single_series.author}}<br>
-      {{ single_series.date_added}}<br>
-    </li>
-  {% empty %}
-    <p>暂无通过审核的作品集</p>
-  {% endfor %}
-</ul>
-
+    <section class="section-block">
+      <h2 class="section-heading">已审核作品集</h2>
+      <div class="product-grid stack-list">
+        {% for single_series in series %}
+          <article class="product-card reveal">
+            <h3>{{ single_series.name }}</h3>
+            {{ single_series.intro|linebreaks }}
+            <div class="metadata">
+              <span>作者：{{ single_series.author }}</span>
+              <span>{{ single_series.date_added }}</span>
+            </div>
+            <div class="card-actions">
+              <a class="button button-secondary" href="{% url 'products:my_single_series' single_series.bango %}">管理作品集</a>
+            </div>
+          </article>
+        {% empty %}
+          <div class="empty-state"><p>暂无通过审核的作品集</p></div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
 {% endblock content %}

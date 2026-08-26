@@ -1,15 +1,25 @@
 {% extends 'website_index/base.html' %}
 
-{% block content %}
-  <p>编辑作品</p>
+{% block page_title %}编辑作品 - {{ product.name }}{% endblock page_title %}
 
-  <form
-    action="{% url 'products:edit_product' series.bango product.id %}"
-    method="POST"
-    enctype="multipart/form-data"
-  >
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button name="submit">修改</button>
-  </form>
+{% block content %}
+  <div class="page-shell">
+    <div class="form-layout">
+      <header class="page-header">
+        <h1>编辑作品</h1>
+        <p>修改“{{ product.name }}”的信息或替换文件。实际发生变化后将重新进入审核。</p>
+      </header>
+
+      <form
+        class="form-shell"
+        action="{% url 'products:edit_product' series.bango product.id %}"
+        method="POST"
+        enctype="multipart/form-data"
+      >
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button form-submit" type="submit">保存修改</button>
+      </form>
+    </div>
+  </div>
 {% endblock content %}

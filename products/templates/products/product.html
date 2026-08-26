@@ -1,27 +1,41 @@
 {% extends 'website_index/base.html' %}
 
+{% block page_title %}{{ series.name }} - 社团作品{% endblock page_title %}
+
 {% block content %}
+  <div class="page-shell">
+    <div class="page-actions">
+      <a class="button button-subtle" href="{% url 'products:all_products' %}">返回作品列表</a>
+    </div>
 
-<a href="{% url 'products:all_products' %}">返回</a>
+    <header class="page-header">
+      <h1>{{ series.name }}</h1>
+      <div class="prose-panel">{{ series.intro|linebreaks }}</div>
+      <div class="metadata">
+        <span>作者：{{ series.author }}</span>
+        <span>{{ series.date_added }}</span>
+      </div>
+    </header>
 
-<ul>
-  <p>
-    {{ series.name }}<br>
-    {{ series.intro|linebreaks }}<br>
-    {{ series.author }}<br>
-    {{ series.date_added}}<br>
-  </p>
-    {% for product in products %}
-      <li>
-        {{ product.name }}<br>
-        <a href="{% url 'products:download_file' product.id %}">下载</a><br>
-        {{ product.author}}<br>
-        {{ product.date_added}}<br>
-        {{ product.intro|linebreaks }}<br>
-      </li>
-    {% empty %}
-      <p>此系列暂无作品</p>
-    {% endfor %}
-</ul>
-
+    <section class="section-block">
+      <h2 class="section-heading">作品版本</h2>
+      <div class="product-grid">
+        {% for product in products %}
+          <article class="product-card reveal">
+            <h3>{{ product.name }}</h3>
+            {{ product.intro|linebreaks }}
+            <div class="metadata">
+              <span>作者：{{ product.author }}</span>
+              <span>{{ product.date_added }}</span>
+            </div>
+            <div class="card-actions">
+              <a class="button" href="{% url 'products:download_file' product.id %}">下载作品</a>
+            </div>
+          </article>
+        {% empty %}
+          <div class="empty-state"><p>此系列暂无作品</p></div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
 {% endblock content %}

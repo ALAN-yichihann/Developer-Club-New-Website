@@ -1,5 +1,18 @@
 {% extends "website_index/base.html" %}
 
+{% block page_title %}注册待确认 - 南师附中开发者社团{% endblock page_title %}
+
 {% block content %}
-  <p>注册申请已提交，请等待管理员确认。</p>
+  <div class="page-shell">
+    <header class="page-header">
+      <h1>注册申请已提交</h1>
+      <p>管理员确认账户后，你就可以登录并管理自己的作品。</p>
+    </header>
+    <div class="status-panel">
+      <p>注册申请已提交，请等待管理员确认。</p>
+    </div>
+    <div class="page-actions">
+      <a class="button button-secondary" href="{% url 'website_index:index' %}">返回首页</a>
+    </div>
+  </div>
 {% endblock content %}

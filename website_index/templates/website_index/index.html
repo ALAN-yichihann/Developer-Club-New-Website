@@ -1,52 +1,90 @@
 {% extends 'website_index/base.html' %}
 
+{% block page_title %}首页 - 南师附中开发者社团{% endblock page_title %}
+
 {% block content %}
+  {% with hero_moment=moments|first %}
+    <section
+      class="home-hero"
+      {% if hero_moment %}style="--hero-image: url('{{ hero_moment.picture.url }}');"{% endif %}
+    >
+      <div class="hero-content">
+        <p class="hero-kicker">成立于 2013 年</p>
+        <h1>南京师范大学附属中学<span>开发者社团</span></h1>
+        <p class="hero-summary">创造新事物 · 热爱编程、乐于分享、共同成长</p>
+      </div>
+    </section>
+  {% endwith %}
 
-<p>南京师范大学附属中学开发者社团</p>
+  <div class="page-shell">
+    <section class="section-block reveal">
+      <h2 class="section-heading">社团简介</h2>
+      {% if intro %}
+        <div class="prose-panel">
+          <h3>{{ intro.title }}</h3>
+          {{ intro.content|linebreaks }}
+          <a href="{% url 'website_index:intro_list' %}">了解更多 →</a>
+        </div>
+      {% else %}
+        <div class="empty-state"><p>暂无社团简介</p></div>
+      {% endif %}
+    </section>
 
-<p>成立于2013年，热爱编程、乐于分享、共同成长</p>
+    <section class="section-block reveal">
+      <div class="section-heading-row">
+        <h2 class="section-heading">社团作品</h2>
+        <a class="button button-subtle" href="{% url 'products:all_products' %}">查看全部作品</a>
+      </div>
+      <div class="product-grid">
+        {% for work in works %}
+          <article class="product-card">
+            <h3>
+              <a class="card-link" href="{% url 'products:single_series' work.series.bango %}">{{ work.name }}</a>
+            </h3>
+            <div class="metadata">
+              <span>作者：{{ work.author }}</span>
+              <span>{{ work.date_added }}</span>
+            </div>
+            <div class="card-actions">
+              <a class="button button-secondary" href="{% url 'products:download_file' work.id %}">下载作品</a>
+            </div>
+          </article>
+        {% empty %}
+          <div class="empty-state"><p>暂无作品</p></div>
+        {% endfor %}
+      </div>
+    </section>
 
-<p>
-  {{ intro.title }}
-  {{ intro.content|linebreaks }}
-</p>
-<p>
-  <a>社团作品</a>
-  <ul>
-    {% for work in works %}
-    <li>
-      {{ work.name }}<br>
-      <a href="{% url 'products:download_file' work.id %}">下载</a><br>
-      {{ work.author }}<br>
-      {{ work.date_added }}<br>
-    </li>
-    {% empty %}
-      <p>暂无作品</p>
-    {% endfor %}
-  </ul>
-  <a href="{% url 'products:all_products' %}">更多作品</a>
-</p>
-<a>社团风采</a>
-<ul>
-  {% for moment in moments %}
-    <li>
-      {{ moment.title }}<br>
-      <img src="{{ moment.picture.url }}" alt="上传的图片" height="400">
-    </li>
-  {% empty %}
-    <p>暂无照片</p>
-  {% endfor %}
-  </ul>
-<ul>
-  <a>快速导航</a>
-  <li>
-    <a href="{% url 'website_index:history' %}">大事记</a>
-  </li>
-  <li>
-    <a href="{% url 'comments:comment_list' %}">社员心声</a>
-  </li>
-  <li>
-    <a href="{% url 'website_index:join_us' %}">加入我们</a>
-  </li>
-</ul>
+    <section class="section-block reveal">
+      <h2 class="section-heading">社团风采</h2>
+      <div class="image-grid">
+        {% for moment in moments %}
+          <figure class="image-card">
+            <img src="{{ moment.picture.url }}" alt="{{ moment.title }}" loading="lazy">
+            <figcaption>{{ moment.title }}</figcaption>
+          </figure>
+        {% empty %}
+          <div class="empty-state"><p>暂无照片</p></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="section-block reveal">
+      <h2 class="section-heading">快速导航</h2>
+      <div class="quick-grid">
+        <a class="quick-link" href="{% url 'website_index:activities' %}">
+          <h3>活动规划</h3>
+          <p>查看社团活动与学年计划</p>
+        </a>
+        <a class="quick-link" href="{% url 'website_index:history' %}">
+          <h3>大事记</h3>
+          <p>回顾社团发展历程</p>
+        </a>
+        <a class="quick-link" href="{% url 'website_index:join_us' %}">
+          <h3>加入我们</h3>
+          <p>了解招新信息与联系方式</p>
+        </a>
+      </div>
+    </section>
+  </div>
 {% endblock content %}

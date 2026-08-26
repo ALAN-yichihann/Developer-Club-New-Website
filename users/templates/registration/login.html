@@ -1,14 +1,21 @@
 {% extends "website_index/base.html" %}
 
+{% block page_title %}社员登录 - 南师附中开发者社团{% endblock page_title %}
+
 {% block content %}
-  <p>只有经过管理员审核的账户才能登录。</p>
-  <form method="POST" action="{% url 'users:login' %}">
-    {% csrf_token %}
-    {{ form.as_p }}
+  <div class="page-shell">
+    <div class="form-layout">
+      <header class="page-header">
+        <h1>社员登录</h1>
+        <p>使用用户名和密码登录。账户需由管理员确认后才能使用。</p>
+      </header>
 
-    <button name="submit">登录</button>
-    <input type="hidden" name="next"
-      value="{% url 'website_index:index' %}" />
-  </form>
-
+      <form class="form-shell" method="POST" action="{% url 'users:login' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button form-submit" type="submit">登录</button>
+        <input type="hidden" name="next" value="{% url 'website_index:index' %}">
+      </form>
+    </div>
+  </div>
 {% endblock content %}

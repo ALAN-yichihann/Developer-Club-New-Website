@@ -1,11 +1,25 @@
 {% extends 'website_index/base.html' %}
 
+{% block page_title %}加入我们 - 南师附中开发者社团{% endblock page_title %}
+
 {% block content %}
+  <div class="page-shell">
+    <header class="page-header">
+      <h1>加入我们</h1>
+      <p>与热爱技术和创造的同学一起学习、协作与实践。</p>
+    </header>
 
-<ul>
-    <p>{{ info.title }}</p>
-    <p>{{ info.content|linebreaks }}</p>
-    <p>{{ info.communication|linebreaks }}</p>
-</ul>
-
+    {% if info %}
+      <section class="section-block reveal">
+        <h2 class="section-heading">{{ info.title }}</h2>
+        <div class="prose-panel">{{ info.content|linebreaks }}</div>
+      </section>
+      <section class="section-block reveal">
+        <h2 class="section-heading">联系方式</h2>
+        <div class="notice">{{ info.communication|linebreaks }}</div>
+      </section>
+    {% else %}
+      <div class="empty-state"><p>暂无加入信息</p></div>
+    {% endif %}
+  </div>
 {% endblock content %}

@@ -1,37 +1,51 @@
 {% extends 'website_index/base.html' %}
 
+{% block page_title %}管理 {{ series.name }}{% endblock page_title %}
+
 {% block content %}
+  <div class="page-shell">
+    <div class="page-actions">
+      <a class="button button-subtle" href="{% url 'products:my_works' %}">返回我的作品</a>
+      <a class="button button-secondary" href="{% url 'products:edit_single_series' series.bango %}">编辑作品集</a>
+      <a class="button" href="{% url 'products:new_product' series.bango %}">上传作品</a>
+    </div>
 
-<a href="{% url 'products:my_works' %}">返回</a>
+    <header class="page-header">
+      <h1>{{ series.name }}</h1>
+      <div class="prose-panel">{{ series.intro|linebreaks }}</div>
+      <div class="metadata">
+        <span>作者：{{ series.author }}</span>
+        <span>{{ series.date_added }}</span>
+      </div>
+    </header>
 
-<a href="{% url 'products:edit_single_series' series.bango %}">编辑作品集信息</a>
+    <div class="status-panel">
+      <p>当前有 {{ pending_product_count }} 个作品尚未审核。</p>
+      {% if pending_product_count > 0 %}
+        <p>审核完成后，作品会显示在下方列表中。</p>
+      {% endif %}
+    </div>
 
-<a href="{% url 'products:new_product' series.bango %}">上传作品！</a>
-
-<p>当前有 {{ pending_product_count }} 个作品尚未审核。</p>
-
-{% if pending_product_count > 0 %}
-  <p>PS: 如果你觉得审核太慢，可以去线下压力管理员(doge)</p>
-{% endif %}
-<ul>
-  <p>
-    {{ series.name }}<br>
-    {{ series.intro|linebreaks }}<br>
-    {{ series.author }}<br>
-    {{ series.date_added}}<br>
-  </p>
-    {% for product in products %}
-      <li>
-        {{ product.name }}<br>
-        <a href="{% url 'products:edit_product' series.bango product.id %}">编辑</a><br>
-        <a href="{% url 'products:download_file' product.id %}">下载</a><br>
-        {{ product.author}}<br>
-        {{ product.date_added}}<br>
-        {{ product.intro|linebreaks }}<br>
-      </li>
-    {% empty %}
-      <p>此系列暂无作品</p>
-    {% endfor %}
-</ul>
-
+    <section class="section-block">
+      <h2 class="section-heading">已审核作品</h2>
+      <div class="product-grid stack-list">
+        {% for product in products %}
+          <article class="product-card reveal">
+            <h3>{{ product.name }}</h3>
+            {{ product.intro|linebreaks }}
+            <div class="metadata">
+              <span>作者：{{ product.author }}</span>
+              <span>{{ product.date_added }}</span>
+            </div>
+            <div class="card-actions">
+              <a class="button button-secondary" href="{% url 'products:edit_product' series.bango product.id %}">编辑</a>
+              <a class="button" href="{% url 'products:download_file' product.id %}">下载</a>
+            </div>
+          </article>
+        {% empty %}
+          <div class="empty-state"><p>此系列暂无通过审核的作品</p></div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
 {% endblock content %}

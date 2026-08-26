@@ -1,23 +1,34 @@
 {% extends 'website_index/base.html' %}
 
+{% block page_title %}社团作品 - 南师附中开发者社团{% endblock page_title %}
+
 {% block content %}
-<p>社团作品</p>
+  <div class="page-shell">
+    <header class="page-header">
+      <h1>社团作品</h1>
+      <p>展示由社团成员或集体创作并通过审核的项目。</p>
+    </header>
 
-<p>这里展示社团成员或集体的作品！</p>
+    <div class="page-actions">
+      <a class="button" href="{% url 'products:my_works' %}">管理我的作品</a>
+    </div>
 
-<a href="{% url 'products:my_works' %}">上传自己的作品！</a>
-
-<ul>
-    {% for single_series in series %}
-        <li>
-            <a href="{% url 'products:single_series' single_series.bango %}">{{ single_series.name }}</a><br>
-            {{ single_series.intro|linebreaks }}<br>
-            {{ single_series.author}}<br>
-            {{ single_series.date_added}}<br>
-        </li>
-    {% empty %}
-        <p>暂无作品</p>
-    {% endfor %}
-</ul>
-
+    <div class="product-grid stack-list">
+      {% for single_series in series %}
+        <article class="product-card reveal">
+          <h2>{{ single_series.name }}</h2>
+          {{ single_series.intro|linebreaks }}
+          <div class="metadata">
+            <span>作者：{{ single_series.author }}</span>
+            <span>{{ single_series.date_added }}</span>
+          </div>
+          <div class="card-actions">
+            <a class="button button-secondary" href="{% url 'products:single_series' single_series.bango %}">查看作品集</a>
+          </div>
+        </article>
+      {% empty %}
+        <div class="empty-state"><p>暂无作品</p></div>
+      {% endfor %}
+    </div>
+  </div>
 {% endblock content %}

@@ -1,29 +1,91 @@
-<nav>
-  <a href="{% url 'website_index:index' %}">首页</a>
-  <a href="{% url 'website_index:intro_list' %}">关于我们</a>
-  <a href="{% url 'website_index:history' %}">大事记</a>
-  <a href="{% url 'comments:comment_list' %}">社员心声</a>
-  <a href="{% url 'products:all_products' %}">社团作品</a>
-  <a href="{% url 'website_index:activities' %}">活动规划</a>
-  <a href="{% url 'website_index:join_us' %}">加入我们</a>
-  {% if user.is_authenticated %}
-    <a href="{% url 'products:my_works' %}">我的作品</a> --
-  {% else %}
-    --
-  {% endif %}
-  {% if user.is_authenticated %}
-    你好，社员{{ user.profile.real_name }}
-    <form action="{% url 'users:logout' %}" method="post" style="display: inline;">
-      {% csrf_token %}
-      <button type="submit">退出登录</button>
-    </form>
-  {% else %}
-    <a href="{% url 'users:register' %}">社员注册</a>
-    <a href="{% url 'users:login' %}">社员登录</a>
-  {% endif %}
-</nav>
-{% block content %}
-{% endblock content %}
-<p>南京师范大学附属中学开发者社团</p>
-<p>创造新事物 · 代码点亮未来</p>
-<p>© 2026 High School Affiliated to Nanjing Normal University Developer Club</p>
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="南京师范大学附属中学开发者社团官方网站">
+  <title>{% block page_title %}南师附中开发者社团{% endblock page_title %}</title>
+  <link rel="stylesheet" href="{% static 'website_index/css/site.css' %}">
+</head>
+<body>
+  <header class="site-header" data-site-header>
+    <div class="header-inner">
+      <a class="brand" href="{% url 'website_index:index' %}">
+        <img src="{% static 'website_index/images/club-logo.png' %}" alt="开发者社团社徽">
+        <span>南师附中开发者社团</span>
+      </a>
+
+      <nav class="site-nav" aria-label="主导航">
+        <ul class="nav-links" data-nav-links>
+          <li><a class="nav-link" href="{% url 'website_index:intro_list' %}">关于我们</a></li>
+          <li><a class="nav-link" href="{% url 'website_index:activities' %}">活动规划</a></li>
+          <li><a class="nav-link" href="{% url 'website_index:history' %}">大事记</a></li>
+          <li><a class="nav-link" href="{% url 'comments:comment_list' %}">社员心声</a></li>
+          <li><a class="nav-link" href="{% url 'products:all_products' %}">社团作品</a></li>
+          <li><a class="nav-link" href="{% url 'website_index:join_us' %}">加入我们</a></li>
+          {% if user.is_authenticated %}
+            <li><a class="nav-link" href="{% url 'products:my_works' %}">我的作品</a></li>
+            <li>
+              <form class="inline-form" action="{% url 'users:logout' %}" method="post">
+                {% csrf_token %}
+                <button class="nav-button nav-auth nav-auth-logout" type="submit">退出登录</button>
+              </form>
+            </li>
+          {% else %}
+            <li>
+              <a
+                class="nav-link nav-auth nav-auth-account{% if request.resolver_match.url_name == 'register' %} is-current{% endif %}"
+                href="{% url 'users:register' %}"
+                {% if request.resolver_match.url_name == 'register' %}aria-current="page"{% endif %}
+              >社员注册</a>
+            </li>
+            <li>
+              <a
+                class="nav-link nav-auth nav-auth-account{% if request.resolver_match.url_name == 'login' %} is-current{% endif %}"
+                href="{% url 'users:login' %}"
+                {% if request.resolver_match.url_name == 'login' %}aria-current="page"{% endif %}
+              >社员登录</a>
+            </li>
+          {% endif %}
+        </ul>
+
+        {% if user.is_authenticated %}
+          <span class="nav-user" title="{{ user.profile.real_name }}">你好，社员{{ user.profile.real_name }}</span>
+        {% endif %}
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="切换为深色主题">◐</button>
+        <button class="menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-label="打开导航菜单">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="site-main">
+    {% block content %}{% endblock content %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <a href="https://www.nsfz.net">
+        <img
+          class="school-logo"
+          src="{% static 'website_index/images/school_logo.png' %}"
+          alt="南京师范大学附属中学校徽"
+        >
+      </a>
+      <div class="footer-copy">
+        <strong>南京师范大学附属中学开发者社团</strong>
+        <p>创造新事物 · 代码点亮未来</p>
+        <p class="footer-copyright">© 2026 High School Affiliated to Nanjing Normal University Developer Club</p>
+      </div>
+      <span class="footer-balance" aria-hidden="true"></span>
+    </div>
+  </footer>
+
+  <button class="back-to-top" type="button" data-back-to-top aria-label="返回顶部">↑</button>
+  <script src="{% static 'website_index/js/site.js' %}" defer></script>
+</body>
+</html>

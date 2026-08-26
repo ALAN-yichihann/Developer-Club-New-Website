@@ -1,6 +1,18 @@
 {% extends 'website_index/base.html' %}
 
+{% block page_title %}作品集待审核 - 南师附中开发者社团{% endblock page_title %}
+
 {% block content %}
-  <p>作品集已经提交，正在等待管理员审核。</p>
-  <p>PS: 如果你觉得审核太慢，可以去线下压力管理员(doge)</p>
+  <div class="page-shell">
+    <header class="page-header">
+      <h1>作品集已提交</h1>
+      <p>管理员审核通过后，作品集会出现在“我的作品”与公开作品页。</p>
+    </header>
+    <div class="status-panel">
+      <p>作品集正在等待管理员审核。</p>
+    </div>
+    <div class="page-actions">
+      <a class="button button-secondary" href="{% url 'products:my_works' %}">返回我的作品</a>
+    </div>
+  </div>
 {% endblock content %}

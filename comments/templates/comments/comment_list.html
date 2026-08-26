@@ -1,19 +1,23 @@
 {% extends 'website_index/base.html' %}
 
+{% block page_title %}社员心声 - 南师附中开发者社团{% endblock page_title %}
+
 {% block content %}
-<p>社员有话说</p>
+  <div class="page-shell">
+    <header class="page-header">
+      <h1>社员有话说</h1>
+      <p>来自社团成员的编程感悟、成长故事与建议。</p>
+    </header>
 
-<p>欢迎来到社员有话说页面！在这里，您可以分享您的想法、意见和建议。请随意发表评论，我们期待听到您的声音！</p>
-
-<ul>
-    {% for comment in comments %}
-        <li>
-            {{ comment.content|linebreaks }}<br>
-            {{ comment.creator }}
-        </li>
-    {% empty %}
-        <p>暂无评论</p>
-    {% endfor %}
-</ul>
-
+    <div class="quote-list">
+      {% for comment in comments %}
+        <article class="quote-card reveal">
+          <blockquote>{{ comment.content|linebreaks }}</blockquote>
+          <cite>{{ comment.creator }}</cite>
+        </article>
+      {% empty %}
+        <div class="empty-state"><p>暂无评论</p></div>
+      {% endfor %}
+    </div>
+  </div>
 {% endblock content %}

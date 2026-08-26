@@ -1,12 +1,25 @@
 {% extends 'website_index/base.html' %}
 
-{% block content %}
-  <p>{{ series.name }}</p>
-  <p>增加你的作品！</p>
+{% block page_title %}上传作品 - {{ series.name }}{% endblock page_title %}
 
-  <form action="{% url 'products:new_product' series.bango %}" method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button name="submit">添加</button>
-  </form>
+{% block content %}
+  <div class="page-shell">
+    <div class="form-layout">
+      <header class="page-header">
+        <h1>上传作品</h1>
+        <p>作品将添加到“{{ series.name }}”，提交后进入管理员审核。</p>
+      </header>
+
+      <form
+        class="form-shell"
+        action="{% url 'products:new_product' series.bango %}"
+        method="POST"
+        enctype="multipart/form-data"
+      >
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button form-submit" type="submit">提交作品</button>
+      </form>
+    </div>
+  </div>
 {% endblock content %}

@@ -1,18 +1,23 @@
 {% extends 'website_index/base.html' %}
 
+{% block page_title %}关于我们 - 南师附中开发者社团{% endblock page_title %}
+
 {% block content %}
+  <div class="page-shell">
+    <header class="page-header">
+      <h1>关于我们</h1>
+      <p>了解开发者社团的理念、组织与技术文化。</p>
+    </header>
 
-<ul>
-    {% for intro in intros %}
-    <li>
-        <p>
-            {{ intro.title }}<br>
-            {{ intro.content|linebreaks }}
-        </p>
-    </li>
-    {% empty %}
-        <p>暂无简介</p>
-    {% endfor %}
-</ul>
-
+    <div class="content-grid stack-list">
+      {% for intro in intros %}
+        <article class="content-card reveal">
+          <h2>{{ intro.title }}</h2>
+          {{ intro.content|linebreaks }}
+        </article>
+      {% empty %}
+        <div class="empty-state"><p>暂无简介</p></div>
+      {% endfor %}
+    </div>
+  </div>
 {% endblock content %}

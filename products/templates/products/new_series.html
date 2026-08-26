@@ -1,11 +1,20 @@
 {% extends 'website_index/base.html' %}
 
-{% block content %}
-  <p>增加你的作品集！</p>
+{% block page_title %}新建作品集 - 南师附中开发者社团{% endblock page_title %}
 
-  <form action="{% url 'products:new_series' %}" method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button name="submit">添加</button>
-  </form>
+{% block content %}
+  <div class="page-shell">
+    <div class="form-layout">
+      <header class="page-header">
+        <h1>新建作品集</h1>
+        <p>填写作品集名称、介绍和作者信息。提交后由管理员设置代号并完成审核。</p>
+      </header>
+
+      <form class="form-shell" action="{% url 'products:new_series' %}" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button form-submit" type="submit">提交作品集</button>
+      </form>
+    </div>
+  </div>
 {% endblock content %}
