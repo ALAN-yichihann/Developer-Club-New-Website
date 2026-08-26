@@ -1,5 +1,7 @@
 from django.shortcuts import render
 
+from random import randint
+
 from .models import Intro, Development, Moment, Activity, Info
 from products.models import Product
 
@@ -34,3 +36,15 @@ def join_us(request):
     info = Info.objects.first()
     context = {'info': info}
     return render(request, 'website_index/joinus.html', context)
+
+def haruhi(request):
+    """彩蛋！"""
+    hitome = '00' + str(randint(29700, 30000))
+    context = {'hitome': hitome, 'lang': 'jp'}
+    return render(request, 'website_index/haruhi.html', context)
+
+def haruhi_cn(request):
+    """彩蛋！"""
+    hitome = '00' + str(randint(29700, 30000))
+    context = {'hitome': hitome, 'lang': 'cn'}
+    return render(request, 'website_index/haruhi.html', context)

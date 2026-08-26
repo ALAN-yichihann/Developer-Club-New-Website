@@ -1,0 +1,81 @@
+{% load static %}
+
+{% if lang == 'jp' %}
+  <a href="{% url 'website_index:haruhi_cn' %}">中文</a>
+  <div class="center" style="font-size: 20px; margin-top: 10px; font-family: ＭＳ Ｐゴシック, Osaka;">
+    <span style="color: black;">あなたは</span>
+    <span style="color: white; background-color: black;">{{ hitome }}</span>
+    <span style="color: black;">人目の訪問者です。</span>
+  </div>
+
+  <div class="center" style="font-size: 50px; margin-top: 50px; font-family: ＭＳ Ｐゴシック, Osaka;">
+    <span style="color: red">SOS団のサイトにようこそ！</span>
+  </div>
+
+  <div class="center" style="margin-top: 20px;">
+    <img
+      src="{% static 'website_index/images/zozlogo.jpg' %}"
+      alt="zozlogo"
+      height="300"
+    >
+  </div>
+
+  <div class="center" style="font-size: 30px; margin-top: 25px; font-family: ＭＳ Ｐゴシック, Osaka;">
+    <a style="color: blue" href="https://haruhi.tv">入り口</a>
+  </div>
+
+  <div class="center" style="font-size: 20px; margin-top: 30px; font-family: ＭＳ Ｐゴシック, Osaka;">
+    <a style="color: black">メールはこちらから→</a>
+    <a href="https://haruhi.tv">
+      <img src="{% static 'website_index/images/post_no.jpg' %}" alt="post_no" height="50">
+    </a>
+  </div>
+
+  <div class="center" style="font-size: 20px; margin-top: 100px; font-family: ＭＳ Ｐゴシック, Osaka;">
+    <span >このホームページはブラウザで１０２４ｘ７６８ピクセル以上で快適にご覧いただけます。</span><br>
+    <span >文字サイズは、小を推奨します。</span>
+  </div>
+{% endif %}
+
+{% if lang == 'cn' %}
+  <a href="{% url 'website_index:haruhi' %}">日本語</a>
+  <div class="center" style="font-size: 20px; margin-top: 5px; font-family: ＭＳ Ｐゴシック, Osaka;">
+    <span style="color: black;">你是第</span>
+    <span style="color: white; background-color: black;">{{ hitome }}</span>
+    <span style="color: black;">位访问者。</span>
+  </div>
+
+  <div class="center" style="font-size: 50px; margin-top: 30px; font-family: ＭＳ Ｐゴシック, Osaka;">
+    <span style="color: red">欢迎来到SOS团的网站！</span>
+  </div>
+
+  <div class="center" style="margin-top: 15px;">
+    <img
+      src="{% static 'website_index/images/zozlogo.jpg' %}"
+      alt="zozlogo"
+      height="300"
+    >
+  </div>
+
+  <div class="center" style="font-size: 30px; margin-top: 25px; font-family: ＭＳ Ｐゴシック, Osaka;">
+    <a style="color: blue" href="https://haruhi.tv">入口</a>
+  </div>
+
+  <div class="center" style="font-size: 20px; margin-top: 30px; font-family: ＭＳ Ｐゴシック, Osaka;">
+    <a style="color: black">邮件点击这里发送→</a>
+    <a href="https://haruhi.tv">
+      <img src="{% static 'website_index/images/post_no.jpg' %}" alt="post_no" height="50">
+    </a>
+  </div>
+
+  <div class="center" style="font-size: 20px; margin-top: 90px; font-family: ＭＳ Ｐゴシック, Osaka;">
+    <span >建议在浏览器中用1024x768像素以上分辨率浏览此主页。</span><br>
+    <span >推荐使用小号文字。</span>
+  </div>
+{% endif %}
+
+<style>
+.center {
+  text-align: center; /* 让父元素内的行内内容水平居中 */
+}
+</style>
