@@ -191,3 +191,22 @@ class UserAdminTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '张三')
         self.assertContains(response, '20260001')
+
+
+class UserGreetingTests(TestCase):
+    def test_authenticated_user_sees_real_name(self):
+        user = User.objects.create_user(
+            username='student',
+            password='StrongPassword123!',
+        )
+        UserProfile.objects.create(
+            user=user,
+            real_name='张三',
+            student_id='20260001',
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('website_index:index'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '你好，社员张三')

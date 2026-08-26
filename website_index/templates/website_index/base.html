@@ -12,7 +12,7 @@
     --
   {% endif %}
   {% if user.is_authenticated %}
-    你好，社员{{ user.realname }}
+    你好，社员{{ user.profile.real_name }}
     <form action="{% url 'users:logout' %}" method="post" style="display: inline;">
       {% csrf_token %}
       <button type="submit">退出登录</button>
