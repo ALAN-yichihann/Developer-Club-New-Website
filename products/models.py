@@ -41,11 +41,11 @@ class Series(models.Model):
             ),
             models.CheckConstraint(
                 condition=(
-                    models.Q(is_approved=True, bango__isnull=False)
-                    & ~models.Q(bango='')
-                ) | (
                     models.Q(is_approved=False)
-                    & (models.Q(bango__isnull=True) | models.Q(bango=''))
+                    | (
+                        models.Q(is_approved=True, bango__isnull=False)
+                        & ~models.Q(bango='')
+                    )
                 ),
                 name='series_approval_requires_bango',
             ),

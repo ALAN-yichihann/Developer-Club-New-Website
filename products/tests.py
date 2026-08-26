@@ -121,6 +121,25 @@ class EditProductTests(TestCase):
         self.assertEqual(self.product.name, '新版本')
         self.assertEqual(self.product.series, self.series)
         self.assertEqual(self.product.file.name, self.original_file_name)
+        self.assertFalse(self.product.is_approved)
+
+    def test_unchanged_product_keeps_approval(self):
+        response = self.client.post(
+            self.url,
+            {
+                'name': self.product.name,
+                'author': self.product.author,
+                'intro': self.product.intro,
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('products:my_single_series', args=[self.series.bango]),
+        )
+        self.product.refresh_from_db()
+        self.assertTrue(self.product.is_approved)
+        self.assertEqual(self.product.file.name, self.original_file_name)
 
     def test_edit_rejects_product_from_another_series(self):
         other_series = Series.objects.create(
@@ -305,6 +324,56 @@ class ApprovalVisibilityTests(TestCase):
         product = Product.objects.get(name='新作品')
         self.assertFalse(product.is_approved)
 
+    def test_edit_series_resets_approval_and_preserves_bango(self):
+        old_bango = self.approved_series.bango
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse('products:edit_single_series', args=[old_bango]),
+            {
+                'name': '编辑后的系列',
+                'intro': '编辑后的介绍',
+                'author': '编辑后的作者',
+            },
+        )
+
+        self.assertRedirects(response, reverse('products:series_added'))
+        self.approved_series.refresh_from_db()
+        self.assertFalse(self.approved_series.is_approved)
+        self.assertEqual(self.approved_series.bango, old_bango)
+        self.assertEqual(
+            self.client.get(
+                reverse('products:single_series', args=[old_bango])
+            ).status_code,
+            404,
+        )
+
+    def test_unchanged_series_keeps_approval(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            reverse(
+                'products:edit_single_series',
+                args=[self.approved_series.bango],
+            ),
+            {
+                'name': self.approved_series.name,
+                'intro': self.approved_series.intro,
+                'author': self.approved_series.author,
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                'products:my_single_series',
+                args=[self.approved_series.bango],
+            ),
+        )
+        self.approved_series.refresh_from_db()
+        self.assertTrue(self.approved_series.is_approved)
+        self.assertEqual(self.approved_series.bango, 'approved_series')
+
 
 class ApprovalAdminFormTests(TestCase):
     def setUp(self):
@@ -353,11 +422,13 @@ class ApprovalAdminFormTests(TestCase):
         self.assertTrue(series.is_approved)
         self.assertEqual(series.bango, 'unique_bango')
 
-    def test_pending_series_cannot_have_bango(self):
+    def test_pending_series_can_preserve_unique_bango(self):
         form = self.series_form('reserved_bango', is_approved=False)
 
-        self.assertFalse(form.is_valid())
-        self.assertIn('未审核的作品集不能设置代号。', form.errors['bango'])
+        self.assertTrue(form.is_valid(), form.errors)
+        series = form.save()
+        self.assertFalse(series.is_approved)
+        self.assertEqual(series.bango, 'reserved_bango')
 
     def test_product_requires_approved_series(self):
         product = Product(

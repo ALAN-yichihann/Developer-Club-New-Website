@@ -147,9 +147,15 @@ def edit_single_series(request, bango):
         form = EditSeriesForm(instance=series, data=request.POST)
         # POST提交数据，处理
         if form.is_valid():
-            form.save()
-            return redirect('products:my_single_series',
-                            bango=bango)
+            if not form.has_changed():
+                return redirect(
+                    'products:my_single_series',
+                    bango=series.bango,
+                )
+            updated_series = form.save(commit=False)
+            updated_series.is_approved = False
+            updated_series.save()
+            return redirect('products:series_added')
     context = {'series': series, 'form': form}
     return render(request, 'products/edit_series.html', context)
 
@@ -173,7 +179,14 @@ def edit_product(request, bango, product_id):
             instance=product,
         )
         if form.is_valid():
-            form.save()
+            if not form.has_changed():
+                return redirect(
+                    'products:my_single_series',
+                    bango=series.bango,
+                )
+            updated_product = form.save(commit=False)
+            updated_product.is_approved = False
+            updated_product.save()
             return redirect(
                 'products:my_single_series',
                 bango=series.bango,

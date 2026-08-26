@@ -34,8 +34,17 @@ class ApprovalAuthenticationForm(AuthenticationForm):
 
 
 class RegisterForm(UserCreationForm):
+    email = forms.EmailField(label='电子邮箱')
     real_name = forms.CharField(label='真实姓名', max_length=50)
     student_id = forms.CharField(label='学籍号', max_length=30)
+    field_order = (
+        'username',
+        'email',
+        'real_name',
+        'student_id',
+        'password1',
+        'password2',
+    )
 
     def clean_real_name(self):
         return self.cleaned_data['real_name'].strip()
@@ -49,6 +58,9 @@ class RegisterForm(UserCreationForm):
     @transaction.atomic
     def save(self, commit=True):
         user = super().save(commit=False)
+        user.email = User._default_manager.normalize_email(
+            self.cleaned_data['email']
+        )
         user.is_active = False
         if commit:
             user.save()

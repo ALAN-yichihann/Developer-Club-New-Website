@@ -65,8 +65,6 @@ class AdminSeriesForm(forms.ModelForm):
         is_approved = cleaned_data.get('is_approved')
         if is_approved and not bango:
             self.add_error('bango', '已审核的作品集必须填写代号。')
-        if not is_approved and bango:
-            self.add_error('bango', '未审核的作品集不能设置代号。')
         if bango and Series.objects.filter(bango=bango).exclude(
             pk=self.instance.pk
         ).exists():

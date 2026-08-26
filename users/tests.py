@@ -16,6 +16,7 @@ class RegisterPageTests(TestCase):
         self.assertContains(response, '用户名')
         self.assertContains(response, '密码')
         self.assertContains(response, '密码确认')
+        self.assertContains(response, '电子邮箱')
         self.assertContains(response, '真实姓名')
         self.assertContains(response, '学籍号')
 
@@ -37,6 +38,7 @@ class RegisterPageTests(TestCase):
             reverse('users:register'),
             {
                 'username': 'student',
+                'email': 'student@example.com',
                 'real_name': '张三',
                 'student_id': '20260001',
                 'password1': 'StrongPassword123!',
@@ -49,6 +51,7 @@ class RegisterPageTests(TestCase):
         self.assertContains(response, '注册申请已提交，请等待管理员确认。')
         user = User.objects.get(username='student')
         self.assertFalse(user.is_active)
+        self.assertEqual(user.email, 'student@example.com')
         self.assertEqual(user.profile.real_name, '张三')
         self.assertEqual(user.profile.student_id, '20260001')
         self.assertNotIn('_auth_user_id', self.client.session)
@@ -92,6 +95,7 @@ class RegisterPageTests(TestCase):
             reverse('users:register'),
             {
                 'username': 'student',
+                'email': 'student@example.com',
                 'real_name': '张三',
                 'student_id': '20260001',
                 'password1': 'StrongPassword123!',
@@ -103,12 +107,29 @@ class RegisterPageTests(TestCase):
         self.assertContains(response, '该学籍号已经注册。')
         self.assertFalse(User.objects.filter(username='student').exists())
 
+    def test_email_is_required(self):
+        response = self.client.post(
+            reverse('users:register'),
+            {
+                'username': 'student',
+                'real_name': '张三',
+                'student_id': '20260001',
+                'password1': 'StrongPassword123!',
+                'password2': 'StrongPassword123!',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('email', response.context['form'].errors)
+        self.assertFalse(User.objects.filter(username='student').exists())
+
 
 class LoginApprovalTests(TestCase):
     def setUp(self):
         self.password = 'StrongPassword123!'
         self.user = User.objects.create_user(
             username='student',
+            email='student@example.com',
             password=self.password,
             is_active=False,
         )
@@ -153,6 +174,21 @@ class LoginApprovalTests(TestCase):
 
         self.assertRedirects(response, reverse('website_index:index'))
         self.assertEqual(int(self.client.session['_auth_user_id']), self.user.id)
+
+    def test_active_user_cannot_login_with_email(self):
+        self.user.is_active = True
+        self.user.save(update_fields=['is_active'])
+
+        response = self.client.post(
+            reverse('users:login'),
+            {
+                'username': self.user.email,
+                'password': self.password,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('_auth_user_id', self.client.session)
 
 
 class UserAdminTests(TestCase):
