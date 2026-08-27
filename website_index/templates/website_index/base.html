@@ -26,6 +26,9 @@
           <li><a class="nav-link" href="{% url 'website_index:join_us' %}">加入我们</a></li>
           {% if user.is_authenticated %}
             <li><a class="nav-link" href="{% url 'products:my_works' %}">我的作品</a></li>
+            {% if user.is_staff %}
+              <li><a class="nav-link nav-admin" href="{% url 'admin:index' %}">管理网站</a></li>
+            {% endif %}
             <li>
               <form class="inline-form" action="{% url 'users:logout' %}" method="post">
                 {% csrf_token %}

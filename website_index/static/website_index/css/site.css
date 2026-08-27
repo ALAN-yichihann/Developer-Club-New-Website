@@ -211,6 +211,13 @@ img {
   color: color-mix(in srgb, var(--club-gold) 72%, var(--text));
 }
 
+.nav-admin {
+  border: 1px solid var(--club-blue);
+  background: color-mix(in srgb, var(--club-blue) 12%, var(--surface));
+  color: var(--club-blue);
+  font-weight: 700;
+}
+
 .inline-form {
   display: inline-flex;
   margin: 0;
@@ -849,6 +856,12 @@ img {
     border-color: var(--club-gold);
     background: var(--club-gold);
     color: #17120a;
+  }
+
+  .nav-admin:hover {
+    border-color: var(--club-blue);
+    background: var(--club-blue);
+    color: #fff;
   }
 
   .nav-link:hover,

@@ -1,7 +1,11 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
 from products.models import Product, Series
+
+
+User = get_user_model()
 
 
 class IndexProductLinksTests(TestCase):
@@ -34,3 +38,29 @@ class IndexProductLinksTests(TestCase):
             response,
             reverse('products:download_file', args=[self.product.id]),
         )
+
+
+class AdminNavigationTests(TestCase):
+    def test_staff_user_sees_admin_link(self):
+        user = User.objects.create_user(
+            username='staff',
+            password='StrongPassword123!',
+            is_staff=True,
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('website_index:index'))
+
+        self.assertContains(response, '管理网站')
+        self.assertContains(response, reverse('admin:index'))
+
+    def test_regular_user_does_not_see_admin_link(self):
+        user = User.objects.create_user(
+            username='member',
+            password='StrongPassword123!',
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse('website_index:index'))
+
+        self.assertNotContains(response, '管理网站')
