@@ -2,6 +2,9 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
 
+from .storage import private_product_storage
+from .validators import product_upload_path, validate_product_file
+
 english_and_symbols_validator = RegexValidator(
     regex=r'^[a-zA-Z_]+$',
     message='只能输入英文字母和下划线！',
@@ -64,7 +67,16 @@ class Product(models.Model):
     author = models.CharField(max_length=100)
     date_added = models.DateTimeField(auto_now_add=True)
     intro = models.TextField()
-    file = models.FileField(upload_to="products/%Y/%m/")
+    file = models.FileField(
+        upload_to=product_upload_path,
+        storage=private_product_storage,
+        validators=[validate_product_file],
+    )
+    original_filename = models.CharField(
+        '原始文件名',
+        max_length=255,
+        blank=True,
+    )
     is_approved = models.BooleanField('已审核', default=False)
 
     def __str__(self) -> str:

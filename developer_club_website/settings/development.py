@@ -1,9 +1,13 @@
+import os
+
 from .base import *
 
 # 开发模式
 DEBUG = True
 
-SECRET_KEY = 'django-insecure-n*i&$o-66qcvl2f_w+wm61s+50m78zyc#yoev2$%3_)^b_8aj)'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    raise RuntimeError('缺少开发环境变量：DJANGO_SECRET_KEY')
 
 ALLOWED_HOSTS = [
     '127.0.0.1',

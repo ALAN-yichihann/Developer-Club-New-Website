@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import FileResponse, Http404
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import EditProductForm, EditSeriesForm, ProductForm, SeriesForm
@@ -44,8 +46,40 @@ def download_file(request, product_id):
     except FileNotFoundError as error:
         raise Http404("文件不存在") from error
 
-    filename = Path(product.file.name).name
-    return FileResponse(product_file, as_attachment=True, filename=filename)
+    filename = product.original_filename or Path(product.file.name).name
+    response = FileResponse(
+        product_file,
+        as_attachment=True,
+        filename=filename,
+        content_type='application/octet-stream',
+    )
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
+
+
+@staff_member_required
+def admin_download_file(request, product_id):
+    """供管理员审核时下载作品文件。"""
+    if not request.user.has_perm('products.view_product'):
+        raise PermissionDenied
+    product = get_object_or_404(Product, id=product_id)
+    if not product.file:
+        raise Http404('文件不存在')
+
+    try:
+        product_file = product.file.open('rb')
+    except FileNotFoundError as error:
+        raise Http404('文件不存在') from error
+
+    filename = product.original_filename or Path(product.file.name).name
+    response = FileResponse(
+        product_file,
+        as_attachment=True,
+        filename=filename,
+        content_type='application/octet-stream',
+    )
+    response['X-Content-Type-Options'] = 'nosniff'
+    return response
 
 
 @login_required
@@ -104,6 +138,9 @@ def new_product(request, bango):
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             product = form.save(commit=False)
+            uploaded_file = request.FILES.get('file')
+            if uploaded_file:
+                product.original_filename = Path(uploaded_file.name).name
             product.owner = request.user
             product.series = series
             product.save()
@@ -173,6 +210,7 @@ def edit_product(request, bango, product_id):
     if series.owner != request.user:
         raise Http404
     if request.method == 'POST':
+        old_file_name = product.file.name
         form = EditProductForm(
             request.POST,
             request.FILES,
@@ -185,8 +223,13 @@ def edit_product(request, bango, product_id):
                     bango=series.bango,
                 )
             updated_product = form.save(commit=False)
+            uploaded_file = request.FILES.get('file')
+            if uploaded_file:
+                updated_product.original_filename = Path(uploaded_file.name).name
             updated_product.is_approved = False
             updated_product.save()
+            if old_file_name != updated_product.file.name and old_file_name:
+                product.file.storage.delete(old_file_name)
             return redirect(
                 'products:my_single_series',
                 bango=series.bango,

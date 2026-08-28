@@ -11,6 +11,11 @@ urlpatterns = [
     path('new_series/', views.new_series, name='new_series'),
     path('my_works/series_added', views.series_added, name='series_added'),
     path('download/<int:product_id>/', views.download_file, name='download_file'),
+    path(
+        'admin-download/<int:product_id>/',
+        views.admin_download_file,
+        name='admin_download_file',
+    ),
     path('<str:bango>/', views.single_series, name='single_series'),
     path('my_works/<str:bango>/', views.my_single_series, name='my_single_series'),
     path('my_works/<str:bango>/edit', views.edit_single_series, name='edit_single_series'),

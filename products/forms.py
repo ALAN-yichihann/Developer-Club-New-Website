@@ -7,6 +7,13 @@ class EditProductFileInput(forms.ClearableFileInput):
     template_name = 'products/widgets/edit_product_file_input.html'
     input_text = '更改为'
 
+    def __init__(self, attrs=None):
+        attrs = {'accept': '.exe,.zip', **(attrs or {})}
+        super().__init__(attrs)
+
+    def is_initial(self, value):
+        return bool(value and getattr(value, 'name', None))
+
 
 class SeriesForm(forms.ModelForm):
     class Meta:
@@ -35,7 +42,10 @@ class ProductForm(forms.ModelForm):
         labels = {
             'name': '版本名称', 'author': '作者', 'intro': '介绍', 'file': '作品文件'
         }
-        widgets = {'intro': forms.Textarea(attrs={'cols': 80})}
+        widgets = {
+            'intro': forms.Textarea(attrs={'cols': 80}),
+            'file': forms.ClearableFileInput(attrs={'accept': '.exe,.zip'}),
+        }
 
 
 class EditProductForm(forms.ModelForm):

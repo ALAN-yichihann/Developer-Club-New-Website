@@ -664,6 +664,10 @@ img {
   color: var(--text-muted);
 }
 
+.upload-notice {
+  margin-bottom: 18px;
+}
+
 .register-alternative {
   margin-top: 56px;
 }

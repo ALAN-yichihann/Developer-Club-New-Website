@@ -49,6 +49,20 @@ python -m pip install -r requirements.txt
 .\.venv\Scripts\Activate.ps1
 ```
 
+开发配置从环境变量读取密钥，不会在代码中提供默认密钥。PowerShell 当前会话可这样设置：
+
+```powershell
+$env:DJANGO_SECRET_KEY = "替换为随机密钥"
+```
+
+生成随机密钥：
+
+```powershell
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+也可以在 Windows 用户环境变量中永久设置 `DJANGO_SECRET_KEY`。不要把真实密钥写入 `.env.example`、代码仓库或命令输出日志。
+
 ### 2. 执行数据库迁移
 
 ```powershell
@@ -114,6 +128,7 @@ python manage.py runserver
 3. 管理员在“Product”后台审核作品。
 4. 只有所属作品集已审核且设置了 `bango` 后，作品才能审核通过。
 5. 用户编辑作品或替换文件后，作品会重新进入待审核状态；如果提交内容完全没有变化，则保持原审核状态。
+6. 作品文件仅允许 EXE 或 ZIP 格式，单个文件最大 100 MB。
 
 ## 文件与静态资源
 
@@ -122,13 +137,16 @@ python manage.py runserver
 ```python
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
 STATIC_URL = "/static/"
 ```
 
-- Product 文件保存到 `media/products/年/月/`
+- Product 文件使用 UUID 文件名保存到私有目录 `private_media/products/年/月/`
+- Product 文件没有公开媒体 URL，只能经过受审核状态保护的下载视图获取
+- 管理员可在 Product 后台通过专用下载入口检查待审核文件
 - Moment 图片保存到 `media/website_index/年/月/`
 - 静态图片位于应用的 `static/` 目录
-- `media/` 中可能包含用户上传内容，不应提交到公开代码仓库
+- `media/` 和 `private_media/` 中包含用户上传内容，不应提交到公开代码仓库
 
 ## 测试与检查
 
@@ -170,6 +188,7 @@ products/                作品集、作品、上传、审核和下载
 users/                   注册、登录、用户资料和账号审核
 comments/                社员评论
 media/                   用户上传文件（运行时生成）
+private_media/           Product 私有文件（运行时生成）
 manage.py                Django 管理命令入口
 db.sqlite3               默认 SQLite 数据库
 ```

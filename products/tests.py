@@ -1,22 +1,35 @@
+from io import BytesIO
+from pathlib import Path
 from tempfile import TemporaryDirectory
+from zipfile import ZIP_DEFLATED, ZipFile
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import Product, Series
 from .forms import AdminProductForm, AdminSeriesForm
+from .validators import MAX_PRODUCT_UPLOAD_SIZE, validate_product_file
 
 
 User = get_user_model()
+
+
+def zip_upload(filename='product.zip', members=None):
+    buffer = BytesIO()
+    with ZipFile(buffer, 'w', compression=ZIP_DEFLATED) as archive:
+        for member_name, content in members or [('readme.txt', b'content')]:
+            archive.writestr(member_name, content)
+    return SimpleUploadedFile(filename, buffer.getvalue())
 
 
 class ProductDownloadTests(TestCase):
     def setUp(self):
         self.media_directory = TemporaryDirectory()
         self.settings_override = override_settings(
-            MEDIA_ROOT=self.media_directory.name
+            PRIVATE_MEDIA_ROOT=self.media_directory.name
         )
         self.settings_override.enable()
 
@@ -32,7 +45,8 @@ class ProductDownloadTests(TestCase):
             name='测试产品',
             author='测试作者',
             intro='产品简介',
-            file=SimpleUploadedFile('product.txt', b'product content'),
+            file=SimpleUploadedFile('product.exe', b'MZproduct content'),
+            original_filename='product.exe',
             is_approved=True,
         )
 
@@ -48,17 +62,73 @@ class ProductDownloadTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.headers['Content-Disposition'],
-            'attachment; filename="product.txt"',
+            'attachment; filename="product.exe"',
         )
-        self.assertEqual(b''.join(response.streaming_content), b'product content')
+        self.assertEqual(b''.join(response.streaming_content), b'MZproduct content')
+        self.assertEqual(response.headers['Content-Type'], 'application/octet-stream')
+        self.assertEqual(response.headers['X-Content-Type-Options'], 'nosniff')
         response.close()
+
+    def test_private_file_has_no_public_url(self):
+        with self.assertRaises(ValueError):
+            _ = self.product.file.url
+
+    def test_disk_name_is_randomized(self):
+        self.assertNotEqual(Path(self.product.file.name).name, 'product.exe')
+        self.assertTrue(self.product.file.name.endswith('.exe'))
+
+    def test_pending_file_requires_staff_download(self):
+        self.product.is_approved = False
+        self.product.save(update_fields=['is_approved'])
+
+        public_response = self.client.get(
+            reverse('products:download_file', args=[self.product.id])
+        )
+        admin_response = self.client.get(
+            reverse('products:admin_download_file', args=[self.product.id])
+        )
+
+        self.assertEqual(public_response.status_code, 404)
+        self.assertRedirects(
+            admin_response,
+            f"{reverse('admin:login')}?next="
+            f"{reverse('products:admin_download_file', args=[self.product.id])}",
+        )
+
+    def test_staff_can_download_pending_file(self):
+        staff = User.objects.create_superuser(
+            username='staff',
+            password='StrongPassword123!',
+            email='staff@example.com',
+        )
+        self.product.is_approved = False
+        self.product.save(update_fields=['is_approved'])
+        self.client.force_login(staff)
+
+        response = self.client.get(
+            reverse('products:admin_download_file', args=[self.product.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.headers['Content-Disposition'],
+            'attachment; filename="product.exe"',
+        )
+        response.close()
+
+    def test_deleting_product_removes_private_file(self):
+        file_path = Path(self.product.file.path)
+
+        self.product.delete()
+
+        self.assertFalse(file_path.exists())
 
 
 class EditProductTests(TestCase):
     def setUp(self):
         self.media_directory = TemporaryDirectory()
         self.settings_override = override_settings(
-            MEDIA_ROOT=self.media_directory.name
+            PRIVATE_MEDIA_ROOT=self.media_directory.name
         )
         self.settings_override.enable()
 
@@ -80,7 +150,8 @@ class EditProductTests(TestCase):
             name='旧版本',
             author='旧作者',
             intro='旧介绍',
-            file=SimpleUploadedFile('old.txt', b'old content'),
+            file=SimpleUploadedFile('old.exe', b'MZold content'),
+            original_filename='old.exe',
             is_approved=True,
         )
         self.url = reverse(
@@ -159,12 +230,88 @@ class EditProductTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_replacing_file_removes_old_private_file(self):
+        old_path = Path(self.product.file.path)
+
+        response = self.client.post(
+            self.url,
+            {
+                'name': self.product.name,
+                'author': self.product.author,
+                'intro': self.product.intro,
+                'file': SimpleUploadedFile('new.exe', b'MZnew content'),
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.original_filename, 'new.exe')
+        self.assertFalse(old_path.exists())
+        self.assertTrue(Path(self.product.file.path).exists())
+
+
+class ProductFileValidatorTests(TestCase):
+    def test_valid_exe_is_accepted(self):
+        validate_product_file(SimpleUploadedFile('product.exe', b'MZcontent'))
+
+    def test_invalid_extension_is_rejected(self):
+        with self.assertRaisesMessage(
+            ValidationError,
+            '只允许上传 EXE 或 ZIP 文件。',
+        ):
+            validate_product_file(SimpleUploadedFile('product.txt', b'content'))
+
+    def test_fake_exe_is_rejected(self):
+        with self.assertRaisesMessage(
+            ValidationError,
+            '文件内容不是有效的 EXE 文件。',
+        ):
+            validate_product_file(SimpleUploadedFile('product.exe', b'not exe'))
+
+    def test_fake_zip_is_rejected(self):
+        with self.assertRaisesMessage(
+            ValidationError,
+            '文件内容不是有效的 ZIP 压缩包。',
+        ):
+            validate_product_file(SimpleUploadedFile('product.zip', b'not zip'))
+
+    def test_valid_zip_is_accepted(self):
+        validate_product_file(zip_upload())
+
+    def test_zip_path_traversal_is_rejected(self):
+        upload = zip_upload(members=[('../outside.txt', b'content')])
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            'ZIP 文件包含不安全的文件路径。',
+        ):
+            validate_product_file(upload)
+
+    def test_abnormal_compression_ratio_is_rejected(self):
+        upload = zip_upload(members=[('large.txt', b'0' * 1024 * 1024)])
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            'ZIP 文件压缩比例异常。',
+        ):
+            validate_product_file(upload)
+
+    def test_file_over_100_mb_is_rejected(self):
+        upload = SimpleUploadedFile('large.exe', b'MZ')
+        upload.size = MAX_PRODUCT_UPLOAD_SIZE + 1
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            '作品文件大小不能超过 100 MB。',
+        ):
+            validate_product_file(upload)
+
 
 class ApprovalVisibilityTests(TestCase):
     def setUp(self):
         self.media_directory = TemporaryDirectory()
         self.settings_override = override_settings(
-            MEDIA_ROOT=self.media_directory.name
+            PRIVATE_MEDIA_ROOT=self.media_directory.name
         )
         self.settings_override.enable()
 
@@ -192,7 +339,8 @@ class ApprovalVisibilityTests(TestCase):
             name='已审核作品',
             author='测试作者',
             intro='已审核作品介绍',
-            file=SimpleUploadedFile('approved.txt', b'approved'),
+            file=SimpleUploadedFile('approved.exe', b'MZapproved'),
+            original_filename='approved.exe',
             is_approved=True,
         )
         self.pending_product = Product.objects.create(
@@ -201,7 +349,8 @@ class ApprovalVisibilityTests(TestCase):
             name='待审核作品',
             author='测试作者',
             intro='待审核作品介绍',
-            file=SimpleUploadedFile('pending.txt', b'pending'),
+            file=SimpleUploadedFile('pending.exe', b'MZpending'),
+            original_filename='pending.exe',
         )
 
     def tearDown(self):
@@ -310,7 +459,7 @@ class ApprovalVisibilityTests(TestCase):
                 'name': '新作品',
                 'author': '测试作者',
                 'intro': '新作品介绍',
-                'file': SimpleUploadedFile('new.txt', b'new'),
+                'file': SimpleUploadedFile('new.exe', b'MZnew'),
             },
         )
 
@@ -445,7 +594,7 @@ class ApprovalAdminFormTests(TestCase):
                 'intro': product.intro,
                 'is_approved': True,
             },
-            files={'file': SimpleUploadedFile('product.txt', b'product')},
+            files={'file': SimpleUploadedFile('product.exe', b'MZproduct')},
             instance=product,
         )
 
