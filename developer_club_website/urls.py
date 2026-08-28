@@ -19,6 +19,10 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+admin.site.site_header = '南师附中开发者社团管理网站'
+admin.site.site_title = '开发者社团管理网站'
+admin.site.index_title = '网站内容管理'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('website_index.urls')),  # Include the URLs from the website_index app

@@ -64,3 +64,38 @@ class AdminNavigationTests(TestCase):
         response = self.client.get(reverse('website_index:index'))
 
         self.assertNotContains(response, '管理网站')
+
+
+class AdminStyleTests(TestCase):
+    def test_admin_login_uses_club_branding_and_styles(self):
+        response = self.client.get(reverse('admin:login'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '南师附中开发者社团管理网站')
+        self.assertContains(
+            response,
+            'website_index/css/admin.css',
+        )
+        self.assertContains(
+            response,
+            'website_index/images/club-logo.png',
+        )
+
+    def test_admin_pages_remain_accessible(self):
+        admin_user = User.objects.create_superuser(
+            username='admin',
+            email='admin@example.com',
+            password='StrongPassword123!',
+        )
+        self.client.force_login(admin_user)
+
+        responses = [
+            self.client.get(reverse('admin:index')),
+            self.client.get(reverse('admin:auth_user_changelist')),
+            self.client.get(reverse('admin:products_series_changelist')),
+            self.client.get(reverse('admin:products_product_changelist')),
+        ]
+
+        for response in responses:
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, 'website_index/css/admin.css')
