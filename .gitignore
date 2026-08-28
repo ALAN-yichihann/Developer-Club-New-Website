@@ -2,8 +2,9 @@
 .env.*
 !.env.example
 
+**/__pycache__/
+*.pyc
 .venv/
-__pycache__/
 *.py[cod]
 *.log
 

@@ -22,7 +22,7 @@
 - Pillow 12.3+
 - SQLite（默认配置）
 
-项目当前未提供 `requirements.txt`。仓库中的 `.venv` 是本地虚拟环境，不建议直接提交或在生产环境复用。
+项目使用 `requirements.txt` 管理运行依赖，使用 `requirements-dev.txt` 管理开发与安全检查工具。仓库中的 `.venv` 是本地虚拟环境，不建议直接提交或在生产环境复用。
 
 ## 本地运行
 
@@ -40,7 +40,7 @@ python -m venv .venv
 安装依赖：
 
 ```powershell
-python -m pip install "Django>=6.1,<6.2" "Pillow>=12.3,<13"
+python -m pip install -r requirements.txt
 ```
 
 如果使用仓库中已有的环境，可直接运行：
@@ -138,6 +138,28 @@ python manage.py test
 ```
 
 当前测试覆盖用户注册、账号激活提示、邮箱必填、登录、后台资料展示、作品上传、作品编辑、审核状态、可见性、文件下载和权限校验。
+
+## 依赖漏洞扫描
+
+安装开发依赖：
+
+```powershell
+python -m pip install -r requirements-dev.txt
+```
+
+扫描项目声明的依赖：
+
+```powershell
+python -m pip_audit -r requirements.txt
+```
+
+扫描当前虚拟环境中的全部已安装包：
+
+```powershell
+python -m pip_audit
+```
+
+发现漏洞后应先确认受影响范围和兼容版本，再更新依赖并运行全部测试。不要在未检查兼容性的情况下直接使用自动修复。
 
 ## 项目结构
 
