@@ -34,6 +34,8 @@ def _validate_product_file(uploaded_file):
         raise ValidationError('作品文件大小不能超过 100 MB。')
 
     suffix = Path(uploaded_file.name).suffix.lower()
+    if len(Path(uploaded_file.name).name) > 255:
+        raise ValidationError('文件名长度不能超过 255 个字符。')
     if suffix not in {'.exe', '.zip'}:
         raise ValidationError('只允许上传 EXE 或 ZIP 文件。')
 
@@ -69,6 +71,8 @@ def _validate_product_file(uploaded_file):
                     raise ValidationError('不允许上传加密 ZIP 文件。')
                 if member_path.is_absolute() or '..' in member_path.parts:
                     raise ValidationError('ZIP 文件包含不安全的文件路径。')
+                if member.is_dir() and len(member_path.parts) > 8:
+                    raise ValidationError('ZIP 文件目录层级过深。')
 
             if archive.testzip() is not None:
                 raise ValidationError('ZIP 文件中的内容已损坏。')

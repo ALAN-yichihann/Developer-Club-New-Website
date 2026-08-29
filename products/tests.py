@@ -124,6 +124,127 @@ class ProductDownloadTests(TestCase):
         self.assertFalse(file_path.exists())
 
 
+class UploadRequestTests(TestCase):
+    def setUp(self):
+        self.media_directory = TemporaryDirectory()
+        self.settings_override = override_settings(
+            PRIVATE_MEDIA_ROOT=self.media_directory.name,
+            DATA_UPLOAD_MAX_MEMORY_SIZE=110 * 1024 * 1024,
+        )
+        self.settings_override.enable()
+        self.user = User.objects.create_user(
+            username='uploader',
+            password='StrongPassword123!',
+        )
+        self.series = Series.objects.create(
+            name='上传请求系列',
+            bango='upload_series',
+            owner=self.user,
+            intro='系列介绍',
+            author='测试作者',
+            is_approved=True,
+        )
+        self.url = reverse(
+            'products:new_product',
+            args=[self.series.bango],
+        )
+        self.client.force_login(self.user)
+
+    def tearDown(self):
+        self.settings_override.disable()
+        self.media_directory.cleanup()
+
+    def payload(self, name, upload):
+        return {
+            'name': name,
+            'author': '测试作者',
+            'intro': '作品介绍',
+            'file': upload,
+        }
+
+    def test_empty_file_is_rejected(self):
+        response = self.client.post(
+            self.url,
+            self.payload('空文件', SimpleUploadedFile('empty.exe', b'')),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('file', response.context['form'].errors)
+        self.assertFalse(Product.objects.filter(name='空文件').exists())
+
+    def test_overlong_filename_is_rejected(self):
+        filename = f"{'a' * 260}.exe"
+        response = self.client.post(
+            self.url,
+            self.payload('超长文件名', SimpleUploadedFile(filename, b'MZdata')),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('file', response.context['form'].errors)
+        self.assertFalse(Product.objects.filter(name='超长文件名').exists())
+
+    def test_multiple_files_only_accepts_declared_file_field(self):
+        response = self.client.post(
+            self.url,
+            {
+                'name': '多文件请求',
+                'author': '测试作者',
+                'intro': '作品介绍',
+                'file': [
+                    SimpleUploadedFile('one.exe', b'MZone'),
+                    SimpleUploadedFile('two.exe', b'MZtwo'),
+                ],
+            },
+        )
+
+        self.assertIn(response.status_code, {200, 302})
+        self.assertLessEqual(
+            Product.objects.filter(name='多文件请求').count(),
+            1,
+        )
+
+    def test_malformed_multipart_request_is_rejected(self):
+        response = self.client.generic(
+            'POST',
+            self.url,
+            data=b'--broken-boundary',
+            content_type='multipart/form-data; boundary=expected-boundary',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('file', response.context['form'].errors)
+        self.assertFalse(Product.objects.filter(name='').exists())
+
+    def test_anonymous_user_cannot_upload(self):
+        self.client.logout()
+
+        response = self.client.get(self.url)
+
+        self.assertRedirects(
+            response,
+            f"{reverse('users:login')}?next={self.url}",
+        )
+
+    def test_non_owner_cannot_upload(self):
+        other_user = User.objects.create_user(
+            username='other_uploader',
+            password='StrongPassword123!',
+        )
+        self.client.force_login(other_user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_unapproved_series_cannot_accept_upload(self):
+        self.series.is_approved = False
+        self.series.save(update_fields=['is_approved'])
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 404)
+
+
 class EditProductTests(TestCase):
     def setUp(self):
         self.media_directory = TemporaryDirectory()

@@ -153,6 +153,7 @@ STATIC_URL = "/static/"
 ```powershell
 python manage.py check
 python manage.py test
+python manage.py check_product_integrity
 ```
 
 当前测试覆盖用户注册、账号激活提示、邮箱必填、登录、后台资料展示、作品上传、作品编辑、审核状态、可见性、文件下载和权限校验。
