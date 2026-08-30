@@ -1,6 +1,7 @@
 from django import forms
 
 from .models import Product, Series
+from .validators import calculate_sha256
 
 
 class EditProductFileInput(forms.ClearableFileInput):
@@ -87,6 +88,9 @@ class AdminProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = '__all__'
+        widgets = {
+            'file': EditProductFileInput(),
+        }
 
     def clean(self):
         cleaned_data = super().clean()
@@ -97,4 +101,24 @@ class AdminProductForm(forms.ModelForm):
                     'is_approved',
                     '所属作品集审核通过并设置代号后，才能审核作品。',
                 )
+            scan_status = cleaned_data.get(
+                'scan_status',
+                self.instance.scan_status,
+            )
+            if scan_status != Product.ScanStatus.CLEAN:
+                self.add_error(
+                    'scan_status',
+                    '文件扫描通过后才能审核作品。',
+                )
         return cleaned_data
+
+    def save(self, commit=True):
+        product = super().save(commit=False)
+        if self.files.get('file'):
+            product.file_sha256 = calculate_sha256(self.files['file'])
+            product.scan_status = Product.ScanStatus.PENDING
+            product.scanned_at = None
+        if commit:
+            product.save()
+            self.save_m2m()
+        return product

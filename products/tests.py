@@ -1,6 +1,7 @@
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from django.contrib.auth import get_user_model
@@ -9,9 +10,11 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .models import Product, Series
+from .models import AuditLog, Product, Series
 from .forms import AdminProductForm, AdminSeriesForm
 from .validators import MAX_PRODUCT_UPLOAD_SIZE, validate_product_file
+from .rate_limits import UPLOAD_LIMIT, upload_rate_limited
+from .scanning import ScanResult, scan_product
 
 
 User = get_user_model()
@@ -23,6 +26,14 @@ def zip_upload(filename='product.zip', members=None):
         for member_name, content in members or [('readme.txt', b'content')]:
             archive.writestr(member_name, content)
     return SimpleUploadedFile(filename, buffer.getvalue())
+
+
+class FakeScanner:
+    def __init__(self, result):
+        self.result = result
+
+    def scan(self, file_path):
+        return self.result
 
 
 class ProductDownloadTests(TestCase):
@@ -427,6 +438,101 @@ class ProductFileValidatorTests(TestCase):
         ):
             validate_product_file(upload)
 
+    def test_zip_dangerous_extension_is_rejected(self):
+        upload = zip_upload(members=[('run.ps1', b'Write-Host unsafe')])
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            'ZIP 文件包含不允许的危险文件类型。',
+        ):
+            validate_product_file(upload)
+
+    def test_zip_duplicate_names_are_rejected(self):
+        upload = zip_upload(
+            members=[('same.txt', b'one'), ('same.txt', b'two')]
+        )
+
+        with self.assertRaisesMessage(
+            ValidationError,
+            'ZIP 文件包含重复的文件名。',
+        ):
+            validate_product_file(upload)
+
+    def test_zip_drive_path_is_rejected(self):
+        upload = zip_upload(members=[('C:\\Windows\\file.dll', b'unsafe')])
+
+        with self.assertRaises(ValidationError) as error:
+            validate_product_file(upload)
+        self.assertIn('ZIP 文件包含不安全', str(error.exception))
+
+
+class ProductScanningTests(TestCase):
+    def setUp(self):
+        self.media_directory = TemporaryDirectory()
+        self.settings_override = override_settings(
+            PRIVATE_MEDIA_ROOT=self.media_directory.name
+        )
+        self.settings_override.enable()
+        self.product = Product.objects.create(
+            series=Series.objects.create(
+                name='扫描系列',
+                bango='scan_series',
+                intro='介绍',
+                author='作者',
+                is_approved=True,
+            ),
+            name='扫描作品',
+            author='作者',
+            intro='介绍',
+            file=SimpleUploadedFile('scan.exe', b'MZscan'),
+        )
+
+    def tearDown(self):
+        self.settings_override.disable()
+        self.media_directory.cleanup()
+
+    def test_scanner_result_is_saved(self):
+        result = scan_product(
+            self.product,
+            FakeScanner(ScanResult('clean', 'OK')),
+        )
+
+        self.assertEqual(result.status, 'clean')
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.scan_status, 'clean')
+        self.assertIsNotNone(self.product.scanned_at)
+
+    def test_scanner_error_is_not_treated_as_clean(self):
+        scan_product(
+            self.product,
+            FakeScanner(ScanResult('error', 'ClamAV unavailable')),
+        )
+
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.scan_status, 'error')
+
+    @patch('products.scanning.subprocess.run')
+    def test_missing_clamav_binary_returns_error(self, run):
+        run.side_effect = FileNotFoundError
+
+        result = scan_product(self.product)
+
+        self.assertEqual(result.status, 'error')
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.scan_status, 'error')
+
+
+class UploadRateLimitTests(TestCase):
+    def test_upload_rate_limit_blocks_after_ten_requests(self):
+        request = type('Request', (), {
+            'user': type('User', (), {'is_authenticated': True, 'pk': 42})(),
+            'META': {},
+        })()
+
+        for _ in range(UPLOAD_LIMIT):
+            self.assertFalse(upload_rate_limited(request))
+        self.assertTrue(upload_rate_limited(request))
+
 
 class ApprovalVisibilityTests(TestCase):
     def setUp(self):
@@ -723,4 +829,83 @@ class ApprovalAdminFormTests(TestCase):
         self.assertIn(
             '所属作品集审核通过并设置代号后，才能审核作品。',
             form.errors['is_approved'],
+        )
+
+    def test_product_approval_requires_clean_scan(self):
+        product = Product(
+            series=self.approved_series,
+            name='未扫描作品',
+            author='测试作者',
+            intro='作品介绍',
+            is_approved=True,
+            scan_status=Product.ScanStatus.PENDING,
+        )
+        form = AdminProductForm(
+            data={
+                'series': self.approved_series.id,
+                'name': product.name,
+                'author': product.author,
+                'intro': product.intro,
+                'is_approved': True,
+                'scan_status': Product.ScanStatus.PENDING,
+            },
+            files={'file': SimpleUploadedFile('product.exe', b'MZproduct')},
+            instance=product,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('文件扫描通过后才能审核作品。', form.errors['scan_status'])
+
+
+class AuditLogTests(TestCase):
+    def test_audit_log_records_admin_approval_change(self):
+        admin_user = User.objects.create_superuser(
+            username='audit_admin',
+            password='StrongPassword123!',
+            email='audit@example.com',
+        )
+        series = Series.objects.create(
+            name='审计系列',
+            bango='audit_series',
+            intro='系列介绍',
+            author='测试作者',
+            is_approved=True,
+        )
+        product = Product.objects.create(
+            series=series,
+            name='审计作品',
+            author='测试作者',
+            intro='作品介绍',
+            file=SimpleUploadedFile('audit.exe', b'MZaudit'),
+            original_filename='audit.exe',
+            scan_status=Product.ScanStatus.CLEAN,
+        )
+        self.client.force_login(admin_user)
+
+        response = self.client.post(
+            reverse('admin:products_product_change', args=[product.id]),
+            {
+                'series': series.id,
+                'owner': '',
+                'name': product.name,
+                'author': product.author,
+                'intro': product.intro,
+                'file': '',
+                'original_filename': product.original_filename,
+                'file_sha256': product.file_sha256,
+                'scan_status': Product.ScanStatus.CLEAN,
+                'scanned_at': '',
+                'is_approved': 'on',
+                '_save': '保存并继续编辑',
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                actor=admin_user,
+                action='审核或修改作品',
+                model_name='Product',
+                object_id=product.id,
+            ).exists()
         )

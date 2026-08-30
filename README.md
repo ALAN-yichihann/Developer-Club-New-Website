@@ -14,6 +14,8 @@
 - 作品集的 `bango` 由管理员设置，审核时必须填写唯一代号
 - 已审核作品支持文件下载
 - Django 管理后台支持用户资料和作品审核
+- Product 文件上传支持 EXE/ZIP 安全校验、扫描状态和 SHA-256 记录
+- 管理后台记录作品审核和代号修改审计日志
 
 ## 技术环境
 
@@ -144,6 +146,7 @@ STATIC_URL = "/static/"
 - Product 文件使用 UUID 文件名保存到私有目录 `private_media/products/年/月/`
 - Product 文件没有公开媒体 URL，只能经过受审核状态保护的下载视图获取
 - 管理员可在 Product 后台通过专用下载入口检查待审核文件
+- 新上传文件状态为“等待扫描”，只有扫描状态为“扫描通过”才能审核
 - Moment 图片保存到 `media/website_index/年/月/`
 - 静态图片位于应用的 `static/` 目录
 - `media/` 和 `private_media/` 中包含用户上传内容，不应提交到公开代码仓库
@@ -155,6 +158,8 @@ python manage.py check
 python manage.py test
 python manage.py check_product_integrity
 ```
+
+`check_product_integrity` 会检查已审核作品集的 `bango`、Product 私有文件和用户资料完整性；发现问题时返回非零状态，不会自动修改数据。
 
 当前测试覆盖用户注册、账号激活提示、邮箱必填、登录、后台资料展示、作品上传、作品编辑、审核状态、可见性、文件下载和权限校验。
 
@@ -179,6 +184,8 @@ python -m pip_audit
 ```
 
 发现漏洞后应先确认受影响范围和兼容版本，再更新依赖并运行全部测试。不要在未检查兼容性的情况下直接使用自动修复。
+
+生产配置中保留了 CSP 草案（`CSP_REPORT_ONLY=True`），当前仅作为策略记录，不会自行发送响应头。接入 CSP 中间件前需要验证后台内联脚本、文件下载和媒体图片的兼容性。
 
 ## 项目结构
 

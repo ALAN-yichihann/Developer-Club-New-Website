@@ -47,3 +47,15 @@ SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_RESOURCE_POLICY = 'same-origin'
+
+# CSP 草案：接入 CSP 中间件并验证后台兼容性后再启用。
+CSP_REPORT_ONLY = True
+CSP_POLICY = {
+    'default-src': ("'self'",),
+    'script-src': ("'self'",),
+    'style-src': ("'self'", "'unsafe-inline'"),
+    'img-src': ("'self'", 'data:', 'https:'),
+    'form-action': ("'self'",),
+}

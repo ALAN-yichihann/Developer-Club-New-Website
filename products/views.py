@@ -4,10 +4,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import FileResponse, Http404
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import EditProductForm, EditSeriesForm, ProductForm, SeriesForm
 from .models import Product, Series
+from .rate_limits import upload_rate_limited
+from .validators import calculate_sha256
 
 
 def all_products(request):
@@ -135,12 +139,15 @@ def new_product(request, bango):
     if request.method != 'POST':
         form = ProductForm()
     else:
+        if upload_rate_limited(request):
+            return HttpResponse('上传次数过多，请稍后再试。', status=429)
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             product = form.save(commit=False)
             uploaded_file = request.FILES.get('file')
             if uploaded_file:
                 product.original_filename = Path(uploaded_file.name).name
+                product.file_sha256 = calculate_sha256(uploaded_file)
             product.owner = request.user
             product.series = series
             product.save()
@@ -210,6 +217,8 @@ def edit_product(request, bango, product_id):
     if series.owner != request.user:
         raise Http404
     if request.method == 'POST':
+        if upload_rate_limited(request):
+            return HttpResponse('上传次数过多，请稍后再试。', status=429)
         old_file_name = product.file.name
         form = EditProductForm(
             request.POST,
@@ -226,6 +235,9 @@ def edit_product(request, bango, product_id):
             uploaded_file = request.FILES.get('file')
             if uploaded_file:
                 updated_product.original_filename = Path(uploaded_file.name).name
+                updated_product.file_sha256 = calculate_sha256(uploaded_file)
+                updated_product.scan_status = Product.ScanStatus.PENDING
+                updated_product.scanned_at = None
             updated_product.is_approved = False
             updated_product.save()
             if old_file_name != updated_product.file.name and old_file_name:

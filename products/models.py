@@ -59,6 +59,12 @@ class Series(models.Model):
 
 
 class Product(models.Model):
+    class ScanStatus(models.TextChoices):
+        PENDING = 'pending', '等待扫描'
+        CLEAN = 'clean', '扫描通过'
+        INFECTED = 'infected', '发现风险'
+        ERROR = 'error', '扫描失败'
+
     series = models.ForeignKey(Series, on_delete=models.CASCADE)
     owner = models.ForeignKey(User, on_delete=models.SET_NULL,
                               null=True,
@@ -77,7 +83,37 @@ class Product(models.Model):
         max_length=255,
         blank=True,
     )
+    file_sha256 = models.CharField('文件 SHA-256', max_length=64, blank=True)
+    scan_status = models.CharField(
+        '扫描状态',
+        max_length=20,
+        choices=ScanStatus.choices,
+        default=ScanStatus.PENDING,
+    )
+    scanned_at = models.DateTimeField('扫描时间', null=True, blank=True)
     is_approved = models.BooleanField('已审核', default=False)
 
     def __str__(self) -> str:
         return self.name
+
+
+class AuditLog(models.Model):
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='product_audit_logs',
+    )
+    action = models.CharField('操作', max_length=50)
+    model_name = models.CharField('模型', max_length=50)
+    object_id = models.PositiveBigIntegerField('对象 ID')
+    details = models.JSONField('详情', default=dict, blank=True)
+    ip_address = models.GenericIPAddressField('IP 地址', null=True, blank=True)
+    created_at = models.DateTimeField('操作时间', auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+    def __str__(self):
+        return f'{self.model_name} {self.object_id} - {self.action}'

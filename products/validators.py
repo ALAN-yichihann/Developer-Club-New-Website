@@ -1,4 +1,7 @@
 from pathlib import Path
+import re
+import hashlib
+import os
 from uuid import uuid4
 from zipfile import BadZipFile, ZipFile, is_zipfile
 
@@ -10,12 +13,25 @@ MAX_PRODUCT_UPLOAD_SIZE = 100 * 1024 * 1024
 MAX_EXTRACTED_SIZE = 500 * 1024 * 1024
 MAX_ARCHIVE_FILES = 2000
 MAX_COMPRESSION_RATIO = 100
+MAX_ARCHIVE_MEMBER_SIZE = 100 * 1024 * 1024
+DANGEROUS_ARCHIVE_EXTENSIONS = {
+    '.bat', '.cmd', '.com', '.dll', '.js', '.ps1', '.scr', '.sh', '.vbs',
+}
 
 
 def product_upload_path(instance, filename):
     suffix = Path(filename).suffix.lower()
     date_path = timezone.localdate().strftime('%Y/%m')
-    return f'products/{date_path}/{uuid4().hex}{suffix}'
+    return f'products/quarantine/{date_path}/{uuid4().hex}{suffix}'
+
+
+def calculate_sha256(uploaded_file):
+    digest = hashlib.sha256()
+    uploaded_file.seek(0)
+    for chunk in iter(lambda: uploaded_file.read(1024 * 1024), b''):
+        digest.update(chunk)
+    uploaded_file.seek(0)
+    return digest.hexdigest()
 
 
 def validate_product_file(uploaded_file):
@@ -73,6 +89,22 @@ def _validate_product_file(uploaded_file):
                     raise ValidationError('ZIP 文件包含不安全的文件路径。')
                 if member.is_dir() and len(member_path.parts) > 8:
                     raise ValidationError('ZIP 文件目录层级过深。')
+                if member.file_size > MAX_ARCHIVE_MEMBER_SIZE:
+                    raise ValidationError('ZIP 文件中的单个文件过大。')
+                if member.is_dir() is False and member.create_system == 3:
+                    mode = (member.external_attr >> 16) & 0o170000
+                    if mode == 0o120000:
+                        raise ValidationError('ZIP 文件不允许包含符号链接。')
+                if os.path.splitdrive(member.filename)[0] or re.match(
+                    r'^[a-zA-Z]:[\\/]', member.filename
+                ):
+                    raise ValidationError('ZIP 文件包含不安全的盘符路径。')
+                if member_path.suffix.lower() in DANGEROUS_ARCHIVE_EXTENSIONS:
+                    raise ValidationError('ZIP 文件包含不允许的危险文件类型。')
+
+            names = [member.filename for member in members]
+            if len(names) != len(set(names)):
+                raise ValidationError('ZIP 文件包含重复的文件名。')
 
             if archive.testzip() is not None:
                 raise ValidationError('ZIP 文件中的内容已损坏。')
