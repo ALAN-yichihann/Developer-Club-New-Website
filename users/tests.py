@@ -233,6 +233,8 @@ class LoginApprovalTests(TestCase):
 
         self.assertRedirects(response, reverse('website_index:index'))
         self.assertEqual(int(self.client.session['_auth_user_id']), self.user.id)
+        self.assertEqual(self.client.session.get_expiry_age(), 60 * 60)
+        self.assertFalse(self.client.session.get_expire_at_browser_close())
 
     def test_active_user_cannot_login_with_email(self):
         self.user.is_active = True
