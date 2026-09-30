@@ -64,7 +64,7 @@ def download_file(request, product_id):
 @staff_member_required
 def admin_download_file(request, product_id):
     """供管理员审核时下载作品文件。"""
-    if not request.user.has_perm('products.view_product'):
+    if not request.user.is_staff:
         raise PermissionDenied
     product = get_object_or_404(Product, id=product_id)
     if not product.file:

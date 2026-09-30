@@ -6,6 +6,7 @@ from . import views
 
 app_name = 'users'
 urlpatterns = [
+    path('captcha/', views.captcha_image, name='captcha_image'),
     # 使用包含账户审核提示的登录页面
     path('login/', views.UserLoginView.as_view(), name='login'),
     # 包含默认的身份验证url

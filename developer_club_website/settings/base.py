@@ -95,6 +95,10 @@ STATIC_URL = '/static/'
 # 登录url
 LOGIN_URL = 'users:login'
 
+# 登录会话从登录时起一小时后过期，不因浏览器关闭而提前过期。
+SESSION_COOKIE_AGE = 60 * 60
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
 # 媒体文件url
 MEDIA_URL = "/media/"
 PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"

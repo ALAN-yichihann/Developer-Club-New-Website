@@ -26,6 +26,35 @@ class SeriesAdmin(admin.ModelAdmin):
     list_filter = ('is_approved',)
     search_fields = ('name', 'bango', 'author')
 
+    def has_view_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().has_view_permission(request, obj)
+        return request.user.is_staff
+
+    def has_module_permission(self, request):
+        if request.user.is_superuser:
+            return super().has_module_permission(request)
+        return request.user.is_staff
+
+    def has_change_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().has_change_permission(request, obj)
+        return request.user.is_staff
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser and super().has_add_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser and super().has_delete_permission(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().get_readonly_fields(request, obj)
+        return tuple(
+            field.name for field in self.model._meta.fields
+            if field.name not in {'bango', 'is_approved'}
+        )
+
     def save_model(self, request, obj, form, change):
         old_approved = Series.objects.filter(pk=obj.pk).values_list(
             'is_approved', flat=True
@@ -56,6 +85,35 @@ class ProductAdmin(admin.ModelAdmin):
         'scanned_at',
         'download_link',
     )
+
+    def has_view_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().has_view_permission(request, obj)
+        return request.user.is_staff
+
+    def has_module_permission(self, request):
+        if request.user.is_superuser:
+            return super().has_module_permission(request)
+        return request.user.is_staff
+
+    def has_change_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().has_change_permission(request, obj)
+        return request.user.is_staff
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser and super().has_add_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser and super().has_delete_permission(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().get_readonly_fields(request, obj)
+        return tuple(
+            field.name for field in self.model._meta.fields
+            if field.name != 'is_approved'
+        ) + ('download_link',)
 
     @admin.display(description='审核文件')
     def download_link(self, product):

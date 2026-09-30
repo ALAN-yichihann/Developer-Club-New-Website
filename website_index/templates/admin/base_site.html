@@ -3,6 +3,11 @@
 
 {% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | 南师附中开发者社团管理网站{% endblock %}
 
+{% block extrahead %}
+  {{ block.super }}
+  <link rel="icon" href="{% static 'website_index/images/club-logo.png' %}" type="image/png">
+{% endblock %}
+
 {% block responsive %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'website_index/css/admin.css' %}">
