@@ -1,11 +1,21 @@
+from io import BytesIO
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from PIL import Image
 
 from .models import UserProfile
 
 
 User = get_user_model()
+
+
+def post_with_captcha(client, url, data):
+    session = client.session
+    session['login_register_captcha'] = 'A1B2C3'
+    session.save()
+    return client.post(url, {**data, 'captcha': 'A1B2C3'})
 
 
 class RegisterPageTests(TestCase):
@@ -19,9 +29,20 @@ class RegisterPageTests(TestCase):
         self.assertContains(response, '电子邮箱')
         self.assertContains(response, '真实姓名')
         self.assertContains(response, '学籍号')
+        self.assertContains(response, reverse('users:captcha_image'))
+
+    def test_captcha_endpoint_returns_uncached_png(self):
+        response = self.client.get(reverse('users:captcha_image'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'image/png')
+        self.assertIn('no-store', response['Cache-Control'])
+        self.assertEqual(len(self.client.session['login_register_captcha']), 6)
+        self.assertEqual(Image.open(BytesIO(response.content)).size, (250, 76))
 
     def test_real_name_and_student_id_are_required(self):
-        response = self.client.post(
+        response = post_with_captcha(
+            self.client,
             reverse('users:register'),
             {
                 'username': 'student',
@@ -34,7 +55,8 @@ class RegisterPageTests(TestCase):
         self.assertFalse(User.objects.filter(username='student').exists())
 
     def test_register_creates_inactive_user_profile_without_login(self):
-        response = self.client.post(
+        response = post_with_captcha(
+            self.client,
             reverse('users:register'),
             {
                 'username': 'student',
@@ -91,7 +113,8 @@ class RegisterPageTests(TestCase):
             student_id='20260001',
         )
 
-        response = self.client.post(
+        response = post_with_captcha(
+            self.client,
             reverse('users:register'),
             {
                 'username': 'student',
@@ -108,7 +131,8 @@ class RegisterPageTests(TestCase):
         self.assertFalse(User.objects.filter(username='student').exists())
 
     def test_email_is_required(self):
-        response = self.client.post(
+        response = post_with_captcha(
+            self.client,
             reverse('users:register'),
             {
                 'username': 'student',
@@ -123,6 +147,28 @@ class RegisterPageTests(TestCase):
         self.assertIn('email', response.context['form'].errors)
         self.assertFalse(User.objects.filter(username='student').exists())
 
+    def test_registration_rejects_wrong_captcha(self):
+        session = self.client.session
+        session['login_register_captcha'] = 'A1B2C3'
+        session.save()
+
+        response = self.client.post(
+            reverse('users:register'),
+            {
+                'username': 'student',
+                'email': 'student@example.com',
+                'real_name': '张三',
+                'student_id': '20260001',
+                'password1': 'StrongPassword123!',
+                'password2': 'StrongPassword123!',
+                'captcha': 'WRONG1',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('captcha', response.context['form'].errors)
+        self.assertFalse(User.objects.filter(username='student').exists())
+
 
 class LoginApprovalTests(TestCase):
     def setUp(self):
@@ -135,7 +181,8 @@ class LoginApprovalTests(TestCase):
         )
 
     def test_inactive_user_sees_pending_approval_message(self):
-        response = self.client.post(
+        response = post_with_captcha(
+            self.client,
             reverse('users:login'),
             {
                 'username': self.user.username,
@@ -147,8 +194,19 @@ class LoginApprovalTests(TestCase):
         self.assertContains(response, '你的账户还未被管理员确认，请等候')
         self.assertNotIn('_auth_user_id', self.client.session)
 
-    def test_wrong_password_does_not_reveal_approval_status(self):
+    def test_login_rejects_missing_captcha(self):
         response = self.client.post(
+            reverse('users:login'),
+            {'username': self.user.username, 'password': self.password},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('captcha', response.context['form'].errors)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_wrong_password_does_not_reveal_approval_status(self):
+        response = post_with_captcha(
+            self.client,
             reverse('users:login'),
             {
                 'username': self.user.username,
@@ -163,7 +221,8 @@ class LoginApprovalTests(TestCase):
         self.user.is_active = True
         self.user.save(update_fields=['is_active'])
 
-        response = self.client.post(
+        response = post_with_captcha(
+            self.client,
             reverse('users:login'),
             {
                 'username': self.user.username,
@@ -179,7 +238,8 @@ class LoginApprovalTests(TestCase):
         self.user.is_active = True
         self.user.save(update_fields=['is_active'])
 
-        response = self.client.post(
+        response = post_with_captcha(
+            self.client,
             reverse('users:login'),
             {
                 'username': self.user.email,

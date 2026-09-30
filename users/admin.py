@@ -51,7 +51,10 @@ class CustomUserAdmin(UserAdmin):
     def has_view_permission(self, request, obj=None):
         if request.user.is_superuser:
             return super().has_view_permission(request, obj)
-        return request.user.is_staff
+        return bool(
+            request.user.is_staff
+            and (obj is None or not obj.is_superuser)
+        )
 
     def has_module_permission(self, request):
         if request.user.is_superuser:

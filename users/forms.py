@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils.crypto import constant_time_compare
 
 from .models import UserProfile
 
@@ -10,7 +11,35 @@ from .models import UserProfile
 User = get_user_model()
 
 
-class ApprovalAuthenticationForm(AuthenticationForm):
+class CaptchaInput(forms.TextInput):
+    template_name = 'users/widgets/captcha.html'
+
+
+class CaptchaFormMixin:
+    def __init__(self, *args, captcha_code=None, **kwargs):
+        self.captcha_code = captcha_code
+        super().__init__(*args, **kwargs)
+
+    def clean_captcha(self):
+        answer = self.cleaned_data['captcha'].strip().upper()
+        if not self.captcha_code or not constant_time_compare(
+            answer, self.captcha_code
+        ):
+            raise forms.ValidationError('验证码错误或已过期，请刷新后重试。')
+        return answer
+
+
+class ApprovalAuthenticationForm(CaptchaFormMixin, AuthenticationForm):
+    captcha = forms.CharField(
+        label='图片验证码',
+        max_length=6,
+        widget=CaptchaInput(attrs={
+            'autocomplete': 'off',
+            'autocapitalize': 'characters',
+            'maxlength': '6',
+        }),
+    )
+
     def clean(self):
         try:
             return super().clean()
@@ -33,7 +62,16 @@ class ApprovalAuthenticationForm(AuthenticationForm):
             raise
 
 
-class RegisterForm(UserCreationForm):
+class RegisterForm(CaptchaFormMixin, UserCreationForm):
+    captcha = forms.CharField(
+        label='图片验证码',
+        max_length=6,
+        widget=CaptchaInput(attrs={
+            'autocomplete': 'off',
+            'autocapitalize': 'characters',
+            'maxlength': '6',
+        }),
+    )
     email = forms.EmailField(label='电子邮箱')
     real_name = forms.CharField(label='真实姓名', max_length=50)
     student_id = forms.CharField(label='学籍号', max_length=30)
@@ -44,6 +82,7 @@ class RegisterForm(UserCreationForm):
         'student_id',
         'password1',
         'password2',
+        'captcha',
     )
 
     def clean_real_name(self):

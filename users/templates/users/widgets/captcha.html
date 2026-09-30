@@ -1,0 +1,5 @@
+{% include "django/forms/widgets/text.html" %}
+<span class="captcha-image-wrap">
+  <img src="{% url 'users:captcha_image' %}" alt="图片验证码" class="captcha-image">
+  <button type="button" class="captcha-refresh" onclick="this.previousElementSibling.src='{% url 'users:captcha_image' %}?refresh='+Date.now()">换一张</button>
+</span>
