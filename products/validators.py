@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 
-MAX_PRODUCT_UPLOAD_SIZE = 100 * 1024 * 1024
+MAX_PRODUCT_UPLOAD_SIZE = 150 * 1024 * 1024
 MAX_EXTRACTED_SIZE = 500 * 1024 * 1024
 MAX_ARCHIVE_FILES = 2000
 MAX_COMPRESSION_RATIO = 100

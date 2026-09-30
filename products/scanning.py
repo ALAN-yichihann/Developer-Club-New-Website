@@ -20,10 +20,10 @@ class ClamAVScanner:
         path = Path(file_path)
         try:
             result = subprocess.run(
-                ['clamdscan', '--no-summary', str(path)],
+                ['clamdscan','--fdpass', '--no-summary', str(path)],
                 capture_output=True,
                 text=True,
-                timeout=120,
+                timeout=300,
                 check=False,
             )
         except FileNotFoundError:

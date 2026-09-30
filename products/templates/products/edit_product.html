@@ -18,7 +18,7 @@
       >
         {% csrf_token %}
         <div class="notice upload-notice">
-          仅允许上传 EXE 或 ZIP 文件，单个文件大小不得超过 100 MB。更换文件后需要重新审核。
+          仅允许上传 EXE 或 ZIP 文件，单个文件大小不得超过 150 MB。更换文件后需要重新审核。
           {% if product.original_filename %}<br>当前文件：{{ product.original_filename }}{% endif %}
         </div>
         {{ form.as_p }}
