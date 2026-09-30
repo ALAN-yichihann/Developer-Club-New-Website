@@ -228,6 +228,104 @@ class UserAdminTests(TestCase):
         self.assertContains(response, '张三')
         self.assertContains(response, '20260001')
 
+    def test_staff_can_open_user_review_page_without_editing_privileges(self):
+        staff = User.objects.create_user(
+            username='reviewer', password='StrongPassword123!', is_staff=True,
+        )
+        self.client.force_login(staff)
+
+        response = self.client.get(
+            reverse('admin:auth_user_change', args=[self.user.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'is_active')
+        self.assertNotContains(response, 'is_superuser')
+        self.assertNotContains(response, 'user_permissions')
+
+    def test_staff_cannot_change_own_staff_or_active_status(self):
+        staff = User.objects.create_user(
+            username='reviewer', password='StrongPassword123!',
+            email='reviewer@example.com', is_staff=True, is_active=True,
+        )
+        self.client.force_login(staff)
+        change_url = reverse('admin:auth_user_change', args=[staff.id])
+
+        page = self.client.get(change_url)
+        response = self.client.post(
+            change_url,
+            {
+                'username': staff.username,
+                'email': staff.email,
+                'is_active': '',
+                '_save': '保存',
+            },
+        )
+
+        staff.refresh_from_db()
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, 'name="is_active"')
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(staff.is_staff)
+        self.assertTrue(staff.is_active)
+
+    def test_staff_cannot_delete_staff_or_superuser(self):
+        staff = User.objects.create_user(
+            username='reviewer', password='StrongPassword123!', is_staff=True,
+        )
+        other_staff = User.objects.create_user(
+            username='other_staff', password='StrongPassword123!', is_staff=True,
+        )
+        self.client.force_login(staff)
+
+        staff_response = self.client.post(
+            reverse('admin:auth_user_delete', args=[other_staff.id]),
+            {'post': 'yes'},
+        )
+        superuser_response = self.client.post(
+            reverse('admin:auth_user_delete', args=[self.admin_user.id]),
+            {'post': 'yes'},
+        )
+
+        self.assertEqual(staff_response.status_code, 403)
+        self.assertEqual(superuser_response.status_code, 403)
+        self.assertTrue(User.objects.filter(pk=other_staff.pk).exists())
+        self.assertTrue(User.objects.filter(pk=self.admin_user.pk).exists())
+
+    def test_staff_cannot_open_superuser_change_page(self):
+        staff = User.objects.create_user(
+            username='reviewer', password='StrongPassword123!', is_staff=True,
+        )
+        self.client.force_login(staff)
+
+        response = self.client.get(
+            reverse('admin:auth_user_change', args=[self.admin_user.id])
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(
+            User.objects.filter(
+                pk=self.admin_user.pk,
+                is_superuser=True,
+                username='admin',
+                email='admin@example.com',
+            ).exists()
+        )
+
+    def test_staff_can_delete_regular_user(self):
+        staff = User.objects.create_user(
+            username='reviewer', password='StrongPassword123!', is_staff=True,
+        )
+        self.client.force_login(staff)
+
+        response = self.client.post(
+            reverse('admin:auth_user_delete', args=[self.user.id]),
+            {'post': 'yes'},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(User.objects.filter(pk=self.user.pk).exists())
+
 
 class UserGreetingTests(TestCase):
     def test_authenticated_user_sees_real_name(self):

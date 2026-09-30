@@ -857,6 +857,62 @@ class ApprovalAdminFormTests(TestCase):
         self.assertIn('文件扫描通过后才能审核作品。', form.errors['scan_status'])
 
 
+class StaffContentReviewAdminTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(
+            username='reviewer', password='StrongPassword123!', is_staff=True,
+        )
+        self.series = Series.objects.create(
+            name='待审核系列', intro='介绍', author='作者',
+        )
+        self.product = Product.objects.create(
+            series=self.series,
+            name='待审核作品',
+            author='作者',
+            intro='介绍',
+            file=SimpleUploadedFile('review.exe', b'MZreview'),
+        )
+        self.client.force_login(self.staff)
+
+    def test_staff_can_view_series_and_product_for_review(self):
+        series_response = self.client.get(
+            reverse('admin:products_series_change', args=[self.series.pk])
+        )
+        product_response = self.client.get(
+            reverse('admin:products_product_change', args=[self.product.pk])
+        )
+
+        self.assertEqual(series_response.status_code, 200)
+        self.assertEqual(product_response.status_code, 200)
+        self.assertContains(series_response, 'is_approved')
+        self.assertContains(product_response, 'is_approved')
+
+    def test_staff_can_download_file_for_review_without_model_permission(self):
+        response = self.client.get(
+            reverse('products:admin_download_file', args=[self.product.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        response.close()
+
+    def test_staff_cannot_add_or_delete_series_or_products(self):
+        series_add = self.client.get(reverse('admin:products_series_add'))
+        product_add = self.client.get(reverse('admin:products_product_add'))
+        series_delete = self.client.post(
+            reverse('admin:products_series_delete', args=[self.series.pk]),
+            {'post': 'yes'},
+        )
+        product_delete = self.client.post(
+            reverse('admin:products_product_delete', args=[self.product.pk]),
+            {'post': 'yes'},
+        )
+
+        self.assertEqual(series_add.status_code, 403)
+        self.assertEqual(product_add.status_code, 403)
+        self.assertEqual(series_delete.status_code, 403)
+        self.assertEqual(product_delete.status_code, 403)
+
+
 class AuditLogTests(TestCase):
     def test_audit_log_records_admin_approval_change(self):
         admin_user = User.objects.create_superuser(
