@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from products.models import Product, Series
-from .models import Link
+from .models import Link, Moment
 
 
 User = get_user_model()
@@ -125,3 +125,31 @@ class StaffLinkAdminTests(TestCase):
         self.assertEqual(change_response.status_code, 200)
         self.assertEqual(delete_response.status_code, 302)
         self.assertFalse(Link.objects.filter(pk=self.link.id).exists())
+
+
+class StaffMomentAdminTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(
+            username='staff', password='StrongPassword123!', is_staff=True,
+        )
+        self.moment = Moment.objects.create(
+            title='旧动态',
+            picture='website_index/test.png',
+        )
+        self.client.force_login(self.staff)
+
+    def test_staff_can_manage_moments(self):
+        change_url = reverse(
+            'admin:website_index_moment_change', args=[self.moment.id]
+        )
+        add_response = self.client.get(reverse('admin:website_index_moment_add'))
+        change_response = self.client.get(change_url)
+        delete_response = self.client.post(
+            reverse('admin:website_index_moment_delete', args=[self.moment.id]),
+            {'post': 'yes'},
+        )
+
+        self.assertEqual(add_response.status_code, 200)
+        self.assertEqual(change_response.status_code, 200)
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertFalse(Moment.objects.filter(pk=self.moment.id).exists())
