@@ -183,6 +183,20 @@ class UploadRequestTests(TestCase):
         self.assertIn('file', response.context['form'].errors)
         self.assertFalse(Product.objects.filter(name='空文件').exists())
 
+    def test_missing_file_is_rejected(self):
+        response = self.client.post(
+            self.url,
+            {
+                'name': '缺少文件',
+                'author': '测试作者',
+                'intro': '作品介绍',
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('file', response.context['form'].errors)
+        self.assertFalse(Product.objects.filter(name='缺少文件').exists())
+
     def test_overlong_filename_is_rejected(self):
         filename = f"{'a' * 260}.exe"
         response = self.client.post(

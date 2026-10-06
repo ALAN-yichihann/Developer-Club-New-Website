@@ -37,16 +37,19 @@ class EditSeriesForm(forms.ModelForm):
 
 
 class ProductForm(forms.ModelForm):
+    file = forms.FileField(
+        label='作品文件',
+        required=True,
+        widget=forms.ClearableFileInput(attrs={'accept': '.exe,.zip'}),
+    )
+
     class Meta:
         model = Product
         fields = ['name', 'author', 'intro', 'file']
         labels = {
             'name': '版本名称', 'author': '作者', 'intro': '介绍', 'file': '作品文件'
         }
-        widgets = {
-            'intro': forms.Textarea(attrs={'cols': 80}),
-            'file': forms.ClearableFileInput(attrs={'accept': '.exe,.zip'}),
-        }
+        widgets = {'intro': forms.Textarea(attrs={'cols': 80})}
 
 
 class EditProductForm(forms.ModelForm):

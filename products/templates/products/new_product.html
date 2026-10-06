@@ -18,7 +18,7 @@
       >
         {% csrf_token %}
         <div class="notice upload-notice">
-          仅允许上传 EXE 或 ZIP 文件，单个文件大小不得超过 150 MB。文件需经过安全检查和管理员审核后才能下载。
+          必须附加作品文件。仅允许上传 EXE 或 ZIP 文件，单个文件大小不得超过 150 MB。文件需经过安全检查和管理员审核后才能下载。
         </div>
         {{ form.as_p }}
         <button class="button form-submit" type="submit">提交作品</button>
