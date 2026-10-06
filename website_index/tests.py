@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from products.models import Product, Series
+from .models import Link
 
 
 User = get_user_model()
@@ -99,3 +100,28 @@ class AdminStyleTests(TestCase):
         for response in responses:
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, 'website_index/css/admin.css')
+
+
+class StaffLinkAdminTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(
+            username='staff', password='StrongPassword123!', is_staff=True,
+        )
+        self.link = Link.objects.create(
+            title='旧链接', description='描述', url='https://example.com',
+        )
+        self.client.force_login(self.staff)
+
+    def test_staff_can_manage_links(self):
+        change_url = reverse('admin:website_index_link_change', args=[self.link.id])
+        add_response = self.client.get(reverse('admin:website_index_link_add'))
+        change_response = self.client.get(change_url)
+        delete_response = self.client.post(
+            reverse('admin:website_index_link_delete', args=[self.link.id]),
+            {'post': 'yes'},
+        )
+
+        self.assertEqual(add_response.status_code, 200)
+        self.assertEqual(change_response.status_code, 200)
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertFalse(Link.objects.filter(pk=self.link.id).exists())

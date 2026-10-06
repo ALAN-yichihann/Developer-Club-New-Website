@@ -331,6 +331,35 @@ class UserAdminTests(TestCase):
         self.assertTrue(staff.is_staff)
         self.assertTrue(staff.is_active)
 
+    def test_staff_cannot_change_other_staff_active_status(self):
+        staff = User.objects.create_user(
+            username='reviewer', password='StrongPassword123!', is_staff=True,
+        )
+        other_staff = User.objects.create_user(
+            username='other_staff', password='StrongPassword123!',
+            email='other@example.com', is_staff=True, is_active=True,
+        )
+        self.client.force_login(staff)
+        change_url = reverse('admin:auth_user_change', args=[other_staff.id])
+
+        page = self.client.get(change_url)
+        response = self.client.post(
+            change_url,
+            {
+                'username': other_staff.username,
+                'email': other_staff.email,
+                'is_active': '',
+                '_save': '保存',
+            },
+        )
+
+        other_staff.refresh_from_db()
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, 'name="is_active"')
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(other_staff.is_staff)
+        self.assertTrue(other_staff.is_active)
+
     def test_staff_cannot_delete_staff_or_superuser(self):
         staff = User.objects.create_user(
             username='reviewer', password='StrongPassword123!', is_staff=True,

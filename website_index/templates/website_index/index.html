@@ -70,6 +70,20 @@
     </section>
 
     <section class="section-block reveal">
+      <h2 class="section-heading">链接网址</h2>
+      <div class="quick-grid">
+        {% for link in links %}
+          <a class="quick-link" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">
+            <h3>{{ link.title }}</h3>
+            <p>{{ link.description }}</p>
+          </a>
+        {% empty %}
+          <div class="empty-state"><p>暂无链接</p></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="section-block reveal">
       <h2 class="section-heading">快速导航</h2>
       <div class="quick-grid">
         <a class="quick-link" href="{% url 'website_index:activities' %}">

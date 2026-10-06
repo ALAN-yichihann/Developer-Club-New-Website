@@ -44,7 +44,9 @@ class CustomUserAdmin(UserAdmin):
         if request.user.is_superuser:
             return super().get_readonly_fields(request, obj)
         readonly_fields = ['username', 'email']
-        if obj is not None and obj.pk == request.user.pk:
+        if obj is not None and (
+            obj.pk == request.user.pk or obj.is_staff
+        ):
             readonly_fields.append('is_active')
         return tuple(readonly_fields)
 

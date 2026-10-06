@@ -2,7 +2,7 @@ from django.shortcuts import render
 
 from random import randint
 
-from .models import Intro, Development, Moment, Activity, Info
+from .models import Intro, Development, Moment, Activity, Info, Link
 from products.models import Product
 
 def index(request):
@@ -13,7 +13,8 @@ def index(request):
         is_approved=True,
         series__is_approved=True,
     ).order_by('-date_added')[:3]
-    context = {'intro': intro, 'moments': moments, 'works': works}
+    links = Link.objects.all()  # 获取所有Link对象
+    context = {'intro': intro, 'moments': moments, 'works': works, 'links': links}
     return render(request, 'website_index/index.html', context)
 
 def intro_list(request):
