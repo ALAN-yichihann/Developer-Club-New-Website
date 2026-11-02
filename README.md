@@ -134,7 +134,7 @@ python manage.py runserver
 
 ## 文件与静态资源
 
-配置位于 `developer_club_website/settings.py`：
+配置位于 `developer_club_website/settings/base.py`（`settings/development.py` 用于开发、`settings/production.py` 用于生产）：
 
 ```python
 MEDIA_URL = "/media/"
@@ -143,7 +143,7 @@ PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
 STATIC_URL = "/static/"
 ```
 
-- Product 文件使用 UUID 文件名保存到私有目录 `private_media/products/年/月/`
+- Product 文件使用 UUID 文件名保存到私有目录 `private_media/products/quarantine/年/月/`（`quarantine` 是上传隔离区，文件扫描通过后仍留在原目录，不会被移动）
 - Product 文件没有公开媒体 URL，只能经过受审核状态保护的下载视图获取
 - 管理员可在 Product 后台通过专用下载入口检查待审核文件
 - 新上传文件状态为“等待扫描”，只有扫描状态为“扫描通过”才能审核
@@ -196,7 +196,7 @@ products/                作品集、作品、上传、审核和下载
 users/                   注册、登录、用户资料和账号审核
 comments/                社员评论
 media/                   用户上传文件（运行时生成）
-private_media/           Product 私有文件（运行时生成）
+private_media/           Product 私有文件（运行时生成，作品文件在 products/quarantine/ 下）
 manage.py                Django 管理命令入口
 db.sqlite3               默认 SQLite 数据库
 ```

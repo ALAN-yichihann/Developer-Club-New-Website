@@ -200,7 +200,6 @@ python -m pip_audit -r requirements.txt      # 依赖漏洞扫描（需 requirem
 | 现象 | 位置 | 说明 |
 | --- | --- | --- |
 | 大小上限不一致 | `products/validators.py` | 常量是 150 MB，错误文案与 README 写 100 MB |
-| 路径文档不一致 | README vs `product_upload_path` | 实际落盘为 `private_media/products/quarantine/YYYY/MM/`，README 少写了 `quarantine` |
 | 重复赋值 | `Series.author = author = models.CharField(...)` | 冗余写法，改动时可清理 |
 | 评论模型弱类型 | `comments/models.py` | `created_at`、`creator` 是 `CharField(20)`，且站点只有只读列表，没有提交入口 |
 | 默认登录跳转 | `settings/base.py` | 未设 `LOGIN_REDIRECT_URL`；登录模板用隐藏域固定 `next=首页`，直连 POST 无 `next` 时会落到默认 `/accounts/profile/`（404） |
