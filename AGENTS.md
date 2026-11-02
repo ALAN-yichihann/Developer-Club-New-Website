@@ -98,6 +98,7 @@ private_media/                   运行时作品私有目录（不入库、不�
 
 ### 5.3 私有文件
 - 作品文件**只能**经 `products:download_file`（需已审核）或 `products:admin_download_file`（需 staff）获取；`FileResponse` 附带 `X-Content-Type-Options: nosniff`。
+- 下载文件名统一由 `Product.download_filename` 解析：优先上传时的 `original_filename`，缺失时用「作品名 + 原扩展名」；新增写文件的入口必须同步写入 `original_filename`。
 - `PrivateProductStorage` 的 `base_url` 为 `None`，访问 `product.file.url` 会抛 `ValueError`——不要给作品文件拼媒体 URL。
 - 替换文件时删除旧文件；删除 `Product` 时由 `post_delete` 信号删除文件。
 - `Moment` 图片仍走公开 `MEDIA_ROOT`（开发环境由 `static()` 提供）。

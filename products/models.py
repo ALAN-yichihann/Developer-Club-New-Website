@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
@@ -92,6 +94,17 @@ class Product(models.Model):
     )
     scanned_at = models.DateTimeField('扫描时间', null=True, blank=True)
     is_approved = models.BooleanField('已审核', default=False)
+
+    @property
+    def download_filename(self) -> str:
+        """下载文件名：优先上传时的原始文件名，缺失时用作品名 + 原扩展名。"""
+        name = (self.original_filename or '').strip()
+        if not name:
+            suffix = Path(self.file.name).suffix if self.file else ''
+            name = f'{self.name}{suffix}'
+        # 兼容历史数据里的完整路径，并去掉会破坏响应头的换行符。
+        name = name.replace('\\', '/').rsplit('/', 1)[-1].strip()
+        return name.replace('\r', '').replace('\n', '')
 
     def __str__(self) -> str:
         return self.name

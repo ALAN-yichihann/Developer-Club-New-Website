@@ -50,7 +50,7 @@ def download_file(request, product_id):
     except FileNotFoundError as error:
         raise Http404("文件不存在") from error
 
-    filename = product.original_filename or Path(product.file.name).name
+    filename = product.download_filename
     response = FileResponse(
         product_file,
         as_attachment=True,
@@ -75,7 +75,7 @@ def admin_download_file(request, product_id):
     except FileNotFoundError as error:
         raise Http404('文件不存在') from error
 
-    filename = product.original_filename or Path(product.file.name).name
+    filename = product.download_filename
     response = FileResponse(
         product_file,
         as_attachment=True,

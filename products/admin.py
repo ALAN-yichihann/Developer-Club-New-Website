@@ -110,10 +110,23 @@ class ProductAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         if request.user.is_superuser:
             return super().get_readonly_fields(request, obj)
+        # 非超管只显示文件名文本，避免 readonly 的 FileField 去取不可用的 url。
         return tuple(
             field.name for field in self.model._meta.fields
-            if field.name != 'is_approved'
-        ) + ('download_link',)
+            if field.name not in {'is_approved', 'file'}
+        ) + ('file_info', 'download_link')
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if not request.user.is_superuser:
+            form.base_fields.pop('file', None)
+        return form
+
+    @admin.display(description='作品文件')
+    def file_info(self, product):
+        if not product.pk or not product.file:
+            return '-'
+        return product.download_filename
 
     @admin.display(description='审核文件')
     def download_link(self, product):

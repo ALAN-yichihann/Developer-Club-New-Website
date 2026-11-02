@@ -2,6 +2,7 @@ from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from urllib.parse import quote
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from django.contrib.auth import get_user_model
@@ -134,6 +135,46 @@ class ProductDownloadTests(TestCase):
 
         self.assertFalse(file_path.exists())
 
+    def test_download_falls_back_to_product_name_when_original_missing(self):
+        self.product.original_filename = ''
+        self.product.save(update_fields=['original_filename'])
+
+        response = self.client.get(
+            reverse('products:download_file', args=[self.product.id])
+        )
+
+        disposition = response.headers['Content-Disposition']
+        self.assertIn("filename*=utf-8''", disposition)
+        self.assertIn(quote('测试产品.exe'), disposition)
+        response.close()
+
+    def test_download_strips_path_from_original_filename(self):
+        self.product.original_filename = r'C:\Users\demo\demo.exe'
+        self.product.save(update_fields=['original_filename'])
+
+        response = self.client.get(
+            reverse('products:download_file', args=[self.product.id])
+        )
+
+        self.assertEqual(
+            response.headers['Content-Disposition'],
+            'attachment; filename="demo.exe"',
+        )
+        response.close()
+
+    def test_download_encodes_non_ascii_filename(self):
+        self.product.original_filename = '社团作品.exe'
+        self.product.save(update_fields=['original_filename'])
+
+        response = self.client.get(
+            reverse('products:download_file', args=[self.product.id])
+        )
+
+        disposition = response.headers['Content-Disposition']
+        self.assertIn("filename*=utf-8''", disposition)
+        self.assertIn('%E7%A4%BE%E5%9B%A2%E4%BD%9C%E5%93%81.exe', disposition)
+        response.close()
+
 
 class UploadRequestTests(TestCase):
     def setUp(self):
@@ -197,16 +238,18 @@ class UploadRequestTests(TestCase):
         self.assertIn('file', response.context['form'].errors)
         self.assertFalse(Product.objects.filter(name='缺少文件').exists())
 
-    def test_overlong_filename_is_rejected(self):
+    def test_overlong_filename_is_truncated_to_255(self):
+        # Django 上传时会先把超长文件名截断到 255 并保留扩展名。
         filename = f"{'a' * 260}.exe"
         response = self.client.post(
             self.url,
             self.payload('超长文件名', SimpleUploadedFile(filename, b'MZdata')),
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('file', response.context['form'].errors)
-        self.assertFalse(Product.objects.filter(name='超长文件名').exists())
+        self.assertEqual(response.status_code, 302)
+        product = Product.objects.get(name='超长文件名')
+        self.assertEqual(len(product.original_filename), 255)
+        self.assertTrue(product.original_filename.endswith('.exe'))
 
     def test_multiple_files_only_accepts_declared_file_field(self):
         response = self.client.post(
@@ -872,8 +915,79 @@ class ApprovalAdminFormTests(TestCase):
         self.assertIn('文件扫描通过后才能审核作品。', form.errors['scan_status'])
 
 
+class AdminProductUploadTests(TestCase):
+    """后台新增或替换文件时，必须记录上传时的原始文件名。"""
+
+    def setUp(self):
+        self.media_directory = TemporaryDirectory()
+        self.settings_override = override_settings(
+            PRIVATE_MEDIA_ROOT=self.media_directory.name
+        )
+        self.settings_override.enable()
+        self.series = Series.objects.create(
+            name='后台上传系列',
+            bango='admin_upload_series',
+            intro='系列介绍',
+            author='测试作者',
+            is_approved=True,
+        )
+
+    def tearDown(self):
+        self.settings_override.disable()
+        self.media_directory.cleanup()
+
+    def build_form(self, upload, instance=None):
+        return AdminProductForm(
+            data={
+                'series': self.series.id,
+                'name': '后台上传作品',
+                'author': '测试作者',
+                'intro': '作品介绍',
+                'scan_status': Product.ScanStatus.PENDING,
+            },
+            files={'file': upload},
+            instance=instance,
+        )
+
+    def test_admin_upload_records_original_filename(self):
+        form = self.build_form(SimpleUploadedFile('管理员作品.EXE', b'MZcontent'))
+
+        self.assertTrue(form.is_valid(), form.errors)
+        product = form.save()
+
+        self.assertEqual(product.original_filename, '管理员作品.EXE')
+        self.assertEqual(product.scan_status, Product.ScanStatus.PENDING)
+        self.assertEqual(product.download_filename, '管理员作品.EXE')
+
+    def test_admin_replace_file_updates_download_filename(self):
+        product = Product.objects.create(
+            series=self.series,
+            name='旧版本',
+            author='测试作者',
+            intro='旧介绍',
+            file=SimpleUploadedFile('old.exe', b'MZold'),
+            original_filename='old.exe',
+            scan_status=Product.ScanStatus.CLEAN,
+            is_approved=True,
+        )
+
+        form = self.build_form(zip_upload('新版本.zip'), instance=product)
+
+        self.assertTrue(form.is_valid(), form.errors)
+        product = form.save()
+
+        self.assertEqual(product.original_filename, '新版本.zip')
+        self.assertEqual(product.download_filename, '新版本.zip')
+        self.assertEqual(product.scan_status, Product.ScanStatus.PENDING)
+
+
 class StaffContentReviewAdminTests(TestCase):
     def setUp(self):
+        self.media_directory = TemporaryDirectory()
+        self.settings_override = override_settings(
+            PRIVATE_MEDIA_ROOT=self.media_directory.name
+        )
+        self.settings_override.enable()
         self.staff = User.objects.create_user(
             username='reviewer', password='StrongPassword123!', is_staff=True,
         )
@@ -886,8 +1000,13 @@ class StaffContentReviewAdminTests(TestCase):
             author='作者',
             intro='介绍',
             file=SimpleUploadedFile('review.exe', b'MZreview'),
+            original_filename='review.exe',
         )
         self.client.force_login(self.staff)
+
+    def tearDown(self):
+        self.settings_override.disable()
+        self.media_directory.cleanup()
 
     def test_staff_can_view_series_and_product_for_review(self):
         series_response = self.client.get(
@@ -901,6 +1020,7 @@ class StaffContentReviewAdminTests(TestCase):
         self.assertEqual(product_response.status_code, 200)
         self.assertContains(series_response, 'is_approved')
         self.assertContains(product_response, 'is_approved')
+        self.assertContains(product_response, 'review.exe')
 
     def test_staff_can_download_file_for_review_without_model_permission(self):
         response = self.client.get(
@@ -929,6 +1049,17 @@ class StaffContentReviewAdminTests(TestCase):
 
 
 class AuditLogTests(TestCase):
+    def setUp(self):
+        self.media_directory = TemporaryDirectory()
+        self.settings_override = override_settings(
+            PRIVATE_MEDIA_ROOT=self.media_directory.name
+        )
+        self.settings_override.enable()
+
+    def tearDown(self):
+        self.settings_override.disable()
+        self.media_directory.cleanup()
+
     def test_audit_log_records_admin_approval_change(self):
         admin_user = User.objects.create_superuser(
             username='audit_admin',

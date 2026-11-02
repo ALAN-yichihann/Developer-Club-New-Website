@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django import forms
 
 from .models import Product, Series
@@ -117,8 +119,10 @@ class AdminProductForm(forms.ModelForm):
 
     def save(self, commit=True):
         product = super().save(commit=False)
-        if self.files.get('file'):
-            product.file_sha256 = calculate_sha256(self.files['file'])
+        uploaded_file = self.files.get('file')
+        if uploaded_file:
+            product.original_filename = Path(uploaded_file.name).name
+            product.file_sha256 = calculate_sha256(uploaded_file)
             product.scan_status = Product.ScanStatus.PENDING
             product.scanned_at = None
         if commit:
