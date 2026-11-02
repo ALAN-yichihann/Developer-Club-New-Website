@@ -47,7 +47,8 @@ def validate_product_file(uploaded_file):
 
 def _validate_product_file(uploaded_file):
     if uploaded_file.size > MAX_PRODUCT_UPLOAD_SIZE:
-        raise ValidationError('作品文件大小不能超过 100 MB。')
+        limit_mb = MAX_PRODUCT_UPLOAD_SIZE // (1024 * 1024)
+        raise ValidationError(f'作品文件大小不能超过 {limit_mb} MB。')
 
     suffix = Path(uploaded_file.name).suffix.lower()
     if len(Path(uploaded_file.name).name) > 255:

@@ -104,7 +104,7 @@ private_media/                   运行时作品私有目录（不入库、不�
 
 ### 5.4 上传校验（`products/validators.py`）
 - 白名单扩展名 `.exe` / `.zip`；EXE 校验 `MZ` 头；ZIP 校验结构、路径穿越、盘符、符号链接、加密成员、重复名、危险后缀、文件数量、解压体积、压缩比与 CRC。
-- 上限常量 `MAX_PRODUCT_UPLOAD_SIZE = 150 MB`（README 已同步为 150 MB，但 `validators.py` 的错误提示文案仍写 100 MB，见第 12 节）。
+- 上限常量 `MAX_PRODUCT_UPLOAD_SIZE = 150 MB`，报错文案由该常量派生；调整上限时需同步 `DATA_UPLOAD_MAX_MEMORY_SIZE`。
 - 上传时计算 SHA-256 存入 `file_sha256`，并记录 `original_filename`。
 
 ### 5.5 扫描与限流
@@ -199,12 +199,11 @@ python -m pip_audit -r requirements.txt      # 依赖漏洞扫描（需 requirem
 
 | 现象 | 位置 | 说明 |
 | --- | --- | --- |
-| 错误文案未同步 | `products/validators.py` | 常量与 README 均为 150 MB，但 `ValidationError` 文案仍写“不能超过 100 MB” |
 | 重复赋值 | `Series.author = author = models.CharField(...)` | 冗余写法，改动时可清理 |
 | 评论模型弱类型 | `comments/models.py` | `created_at`、`creator` 是 `CharField(20)`，且站点只有只读列表，没有提交入口 |
 | 默认登录跳转 | `settings/base.py` | 未设 `LOGIN_REDIRECT_URL`；登录模板用隐藏域固定 `next=首页`，直连 POST 无 `next` 时会落到默认 `/accounts/profile/`（404） |
 | 限流不如预期 | `products/rate_limits.py` | 依赖默认 LocMemCache，多进程/多实例下失效；生产未配置 `CACHES` |
-| 上传体积 | `settings/base.py` | `DATA_UPLOAD_MAX_MEMORY_SIZE=160 MB`、`FILE_UPLOAD_MAX_MEMORY_SIZE=2 MB`，改动上限需同步三处常量与文案 |
+| 上传体积 | `settings/base.py` | `DATA_UPLOAD_MAX_MEMORY_SIZE=160 MB`、`FILE_UPLOAD_MAX_MEMORY_SIZE=2 MB`；改动上限需同步校验常量与该设置（文案已由常量派生） |
 | CSP 未生效 | `settings/production.py` | 仅保留策略字典，未接入中间件 |
 | 未使用导入 | `products/views.py` | 残留未使用的 `IntegrityError` 导入，触及时顺手清理 |
 | SQLite 残留 | 仓库根 | `db.sqlite3` 已忽略，不要提交；本地数据缺失时先 `migrate` |

@@ -442,13 +442,14 @@ class ProductFileValidatorTests(TestCase):
         ):
             validate_product_file(upload)
 
-    def test_file_over_100_mb_is_rejected(self):
+    def test_file_over_limit_is_rejected(self):
         upload = SimpleUploadedFile('large.exe', b'MZ')
         upload.size = MAX_PRODUCT_UPLOAD_SIZE + 1
+        limit_mb = MAX_PRODUCT_UPLOAD_SIZE // (1024 * 1024)
 
         with self.assertRaisesMessage(
             ValidationError,
-            '作品文件大小不能超过 100 MB。',
+            f'作品文件大小不能超过 {limit_mb} MB。',
         ):
             validate_product_file(upload)
 
